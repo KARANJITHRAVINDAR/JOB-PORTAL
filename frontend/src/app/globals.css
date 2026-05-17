@@ -1,0 +1,49 @@
+@import "tailwindcss";
+
+@theme {
+  --color-neon-purple: #b026ff;
+  --color-neon-magenta: #ff00ff;
+  --color-neon-blue: #00f0ff;
+  --color-deep-black: #0a0a0f;
+  --color-surface: rgba(20, 20, 30, 0.7);
+  --color-surface-hover: rgba(40, 30, 60, 0.8);
+
+  --font-sans: 'Inter', sans-serif;
+  
+  --radius-xl: 1.5rem;
+  --radius-2xl: 2rem;
+}
+
+@layer base {
+  :root {
+    --background: var(--color-deep-black);
+    --foreground: #ffffff;
+  }
+  
+  body {
+    background-color: var(--background);
+    color: var(--foreground);
+    background-image: 
+      radial-gradient(circle at 15% 50%, rgba(176, 38, 255, 0.08), transparent 25%),
+      radial-gradient(circle at 85% 30%, rgba(0, 240, 255, 0.08), transparent 25%);
+    background-attachment: fixed;
+    min-height: 100vh;
+    font-family: var(--font-sans);
+  }
+}
+
+@layer components {
+  .glass-card {
+    @apply bg-surface backdrop-blur-xl border border-white/10 rounded-2xl p-6 transition-all duration-300;
+  }
+  .glass-card:hover {
+    @apply border-neon-purple/50 shadow-[0_0_20px_rgba(176,38,255,0.2)];
+  }
+  
+  .btn-neon {
+    @apply bg-neon-purple/20 text-white border border-neon-purple px-6 py-2 rounded-full font-medium transition-all duration-300 shadow-[0_0_10px_rgba(176,38,255,0.3)];
+  }
+  .btn-neon:hover {
+    @apply bg-neon-purple/40 shadow-[0_0_20px_rgba(176,38,255,0.6)] scale-105;
+  }
+}

@@ -1,0 +1,206 @@
+'use client';
+
+import { motion } from 'framer-motion';
+import { MapPin, Briefcase, Zap, Search, Mic, Map, ShieldCheck, CheckCircle } from 'lucide-react';
+import Link from 'next/link';
+import { useState, useEffect } from 'react';
+
+export default function SeekerDashboard() {
+  const [available, setAvailable] = useState(true);
+  const [user, setUser] = useState<any>(null);
+  const [jobs, setJobs] = useState<any[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    const userData = localStorage.getItem('user');
+    if (userData) {
+      const parsed = JSON.parse(userData);
+      setUser(parsed);
+      fetchJobs(parsed);
+    }
+  }, []);
+
+  const fetchJobs = async (userData: any) => {
+    try {
+      // Use user's real coordinates or default to Salem
+      const lat = userData.lat || 11.6643;
+      const lng = userData.lng || 78.1460;
+      
+      let url = `http://localhost:4000/api/jobs/nearby?lat=${lat}&lng=${lng}`;
+      if (userData.category_sought) {
+        url += `&category=${encodeURIComponent(userData.category_sought)}`;
+      }
+      
+      const res = await fetch(url);
+      const data = await res.json();
+      if (Array.isArray(data)) {
+        setJobs(data);
+      }
+    } catch (e) {
+      console.error(e);
+    }
+    setLoading(false);
+  };
+
+  const handleApply = async (jobId: string) => {
+    if (!user) return;
+    try {
+      const res = await fetch('http://localhost:4000/api/jobs/apply', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ job_id: jobId, worker_id: user.id }),
+      });
+      const data = await res.json();
+      if (res.ok) {
+        alert('Applied successfully! Status: ' + data.status);
+        // Remove from feed
+        setJobs(jobs.filter(j => j.id !== jobId));
+      } else {
+        alert(data.error || 'Failed to apply');
+      }
+    } catch (e) {
+      alert('Error applying to job');
+    }
+  };
+
+  const urgentJob = jobs.length > 0 ? jobs[0] : null;
+  const regularJobs = jobs.slice(1);
+
+  return (
+    <div className="space-y-8 animate-in fade-in duration-500 pb-20">
+      <header className="flex flex-col gap-4">
+        <div className="flex justify-between items-center">
+          <div>
+            <h1 className="text-2xl font-bold">Hello, {user?.name || 'Worker'}</h1>
+            <p className="text-sm text-gray-400 mt-1 flex items-center gap-1">
+              <ShieldCheck size={14} className="text-green-400" /> Trust Score: {user?.trust_score || 100}/100
+            </p>
+          </div>
+          
+          <button 
+            onClick={() => setAvailable(!available)}
+            className={`px-4 py-2 rounded-full border text-sm font-medium transition-all duration-300 flex items-center gap-2 ${
+              available ? 'bg-green-500/20 border-green-500 text-green-400 shadow-[0_0_15px_rgba(34,197,94,0.3)]' : 'bg-gray-800 border-gray-600 text-gray-400'
+            }`}
+          >
+            <span className={`w-2 h-2 rounded-full ${available ? 'bg-green-400 animate-pulse' : 'bg-gray-500'}`}></span>
+            {available ? 'Available Now' : 'Busy'}
+          </button>
+        </div>
+
+        {/* AI Voice Search Bar */}
+        <div className="relative">
+          <input 
+            type="text" 
+            placeholder="What kind of work are you looking for?" 
+            className="w-full bg-white/5 border border-white/10 rounded-2xl py-4 pl-12 pr-16 text-white focus:outline-none focus:border-neon-purple focus:ring-1 focus:ring-neon-purple transition-all shadow-[0_0_15px_rgba(0,0,0,0.5)]"
+          />
+          <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400" size={20} />
+          
+          <button className="absolute right-2 top-1/2 -translate-y-1/2 bg-neon-purple/20 hover:bg-neon-purple/40 p-2 rounded-xl border border-neon-purple/50 text-neon-purple transition-colors">
+            <Mic size={20} />
+          </button>
+        </div>
+      </header>
+
+      {/* Emergency Jobs - Uber Style ping */}
+      {urgentJob && (
+        <div className="glass-card bg-red-900/20 border-red-500/50 relative overflow-hidden group cursor-pointer">
+          <div className="absolute inset-0 bg-red-500/10 opacity-0 group-hover:opacity-100 transition-opacity"></div>
+          <div className="absolute top-0 right-0 bg-red-500/30 text-red-400 text-xs px-3 py-1 rounded-bl-lg flex items-center gap-1 font-bold tracking-wider">
+            <Zap size={12} className="animate-pulse" /> URGENT MATCH
+          </div>
+          
+          <div className="flex items-start gap-4">
+            <div className="w-12 h-12 rounded-xl bg-red-500/20 flex items-center justify-center shrink-0 border border-red-500/30">
+              <Briefcase className="text-red-400" />
+            </div>
+            <div>
+              <h3 className="text-lg font-bold">{urgentJob.title}</h3>
+              <div className="flex flex-wrap gap-x-4 gap-y-2 mt-2 text-sm text-gray-300">
+                <span className="flex items-center gap-1"><MapPin size={14} className="text-neon-blue" /> {(urgentJob.distance/1000).toFixed(1)} km away</span>
+                <span className="flex items-center gap-1"><Zap size={14} className="text-yellow-400" /> ₹{urgentJob.wage}</span>
+              </div>
+              <div className="mt-4 flex gap-3">
+                <button 
+                  onClick={() => handleApply(urgentJob.id)}
+                  className="bg-red-500 hover:bg-red-600 text-white px-6 py-2 rounded-xl font-medium transition-colors shadow-[0_0_15px_rgba(239,68,68,0.4)]"
+                >
+                  Accept Job
+                </button>
+                <button 
+                  onClick={() => setJobs(jobs.slice(1))}
+                  className="bg-white/5 hover:bg-white/10 px-4 py-2 rounded-xl transition-colors"
+                >
+                  Skip
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Regular Jobs Feed */}
+      <div>
+        <div className="flex justify-between items-center mb-4">
+          <h2 className="text-xl font-semibold flex items-center gap-2">
+            <Map className="text-neon-blue" /> Nearby Opportunities
+          </h2>
+          <Link href="/seeker/jobs" className="text-sm text-neon-blue hover:text-white transition-colors">
+            View Map
+          </Link>
+        </div>
+
+        <div className="space-y-4">
+          {loading ? (
+            <div className="text-center text-gray-400 py-4">Searching for jobs...</div>
+          ) : regularJobs.length === 0 ? (
+            <div className="text-center text-gray-400 py-4">No regular jobs found matching your category.</div>
+          ) : (
+            regularJobs.map((job, idx) => (
+              <div key={idx} className="glass-card hover:-translate-y-1 hover:border-white/30 cursor-pointer flex flex-col gap-3">
+                <div className="flex justify-between items-start">
+                  <div>
+                    <h3 className="font-medium text-lg">{job.title}</h3>
+                    <div className="flex gap-3 text-sm text-gray-400 mt-2">
+                      <span className="flex items-center gap-1"><MapPin size={14} /> {(job.distance/1000).toFixed(1)} km</span>
+                      <span className="flex items-center gap-1 text-green-400"><Briefcase size={14} /> ₹{job.wage}</span>
+                    </div>
+                  </div>
+                  <span className="px-3 py-1 rounded-full bg-white/5 border border-white/10 text-xs text-gray-300">
+                    {job.category}
+                  </span>
+                </div>
+                <button 
+                  onClick={() => handleApply(job.id)}
+                  className="bg-neon-purple/20 text-neon-purple hover:bg-neon-purple hover:text-white px-4 py-2 rounded-xl transition-colors font-medium text-sm w-max"
+                >
+                  Apply Now
+                </button>
+              </div>
+            ))
+          )}
+        </div>
+      </div>
+
+      {/* Status Tracker */}
+      <div className="glass-card">
+        <h3 className="font-semibold mb-4">Current Application Status</h3>
+        
+        <div className="flex gap-4 items-center">
+          <div className="w-10 h-10 rounded-full bg-neon-blue/20 border border-neon-blue flex items-center justify-center">
+            <CheckCircle className="text-neon-blue" size={20} />
+          </div>
+          <div>
+            <h4 className="font-medium">AC Mechanic - LG Showroom</h4>
+            <p className="text-sm text-gray-400">Accepted. Employer is waiting for you.</p>
+          </div>
+          <button className="ml-auto btn-neon py-1.5 px-4 text-sm">
+            Start Work
+          </button>
+        </div>
+      </div>
+
+    </div>
+  );
+}

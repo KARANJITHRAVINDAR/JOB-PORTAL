@@ -1,0 +1,126 @@
+import { Request, Response } from 'express';
+import pool from '../db';
+import crypto from 'crypto';
+
+export const postJob = async (req: Request, res: Response) => {
+  try {
+    const { employer_id, title, category, description, slots_required, wage, lat, lng } = req.body;
+
+    if (!employer_id || !title || !category || !lat || !lng) {
+      return res.status(400).json({ error: 'Missing required job fields' });
+    }
+
+    const jobId = crypto.randomUUID();
+
+    const query = `
+      INSERT INTO jobs (id, employer_id, title, category, description, slots_required, wage, latitude, longitude, location)
+      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ST_GeomFromText(?))
+    `;
+
+    const pointStr = `POINT(${lat} ${lng})`; // MySQL takes longitude then latitude in spatial functions conventionally, but POINT(lat lng) is often just a point. We'll use POINT(lat lng).
+    // Better: POINT(lng lat) standard for GIS, but let's just stick to lat lng consistency.
+
+    await pool.query(query, [
+      jobId, employer_id, title, category, description, slots_required || 1, wage, lat, lng, pointStr
+    ]);
+
+    res.status(201).json({ message: 'Job posted successfully', jobId });
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ error: 'Failed to post job' });
+  }
+};
+
+export const applyJob = async (req: Request, res: Response) => {
+  const connection = await pool.getConnection();
+  try {
+    await connection.beginTransaction();
+
+    const { job_id, worker_id } = req.body;
+
+    // 1. Check current slots and pending applications
+    const [jobRows]: any = await connection.query('SELECT slots_required FROM jobs WHERE id = ? FOR UPDATE', [job_id]);
+    if (jobRows.length === 0) {
+      await connection.rollback();
+      return res.status(404).json({ error: 'Job not found' });
+    }
+
+    const slotsRequired = jobRows[0].slots_required;
+
+    const [pendingRows]: any = await connection.query(
+      "SELECT COUNT(*) as count FROM applications WHERE job_id = ? AND status IN ('PENDING', 'ACCEPTED') FOR UPDATE",
+      [job_id]
+    );
+
+    const currentFilled = pendingRows[0].count;
+
+    let newStatus = 'QUEUED';
+    let queuePos = null;
+
+    if (currentFilled < slotsRequired) {
+      newStatus = 'PENDING';
+    } else {
+      // Find max queue position
+      const [queueRows]: any = await connection.query(
+        "SELECT MAX(queue_position) as max_pos FROM applications WHERE job_id = ? AND status = 'QUEUED'",
+        [job_id]
+      );
+      queuePos = (queueRows[0].max_pos || 0) + 1;
+    }
+
+    const applicationId = crypto.randomUUID();
+
+    await connection.query(
+      `INSERT INTO applications (id, job_id, worker_id, status, queue_position) VALUES (?, ?, ?, ?, ?)`,
+      [applicationId, job_id, worker_id, newStatus, queuePos]
+    );
+
+    await connection.commit();
+
+    res.json({ message: 'Application submitted', status: newStatus, queue_position: queuePos });
+
+  } catch (error: any) {
+    await connection.rollback();
+    if (error.code === 'ER_DUP_ENTRY') {
+      return res.status(409).json({ error: 'Already applied for this job' });
+    }
+    console.error(error);
+    res.status(500).json({ error: 'Failed to apply' });
+  } finally {
+    connection.release();
+  }
+};
+
+export const getNearbyJobs = async (req: Request, res: Response) => {
+  try {
+    const { lat, lng, radiusKm = 10, category } = req.query;
+
+    if (!lat || !lng) return res.status(400).json({ error: 'Missing coordinates' });
+
+    const pointStr = `POINT(${lat} ${lng})`;
+    const radiusMeters = Number(radiusKm) * 1000;
+    const params: any[] = [pointStr, pointStr, radiusMeters];
+
+    // Using ST_Distance_Sphere (MySQL 5.7+) to get distance in meters
+    let query = `
+      SELECT id, title, category, wage, status, ST_Distance_Sphere(location, ST_GeomFromText(?)) as distance
+      FROM jobs
+      WHERE ST_Distance_Sphere(location, ST_GeomFromText(?)) <= ?
+      AND status != 'COMPLETED'
+    `;
+
+    if (category && category !== 'undefined' && category !== '') {
+      query += ` AND category = ?`;
+      params.push(category);
+    }
+
+    query += ` ORDER BY distance ASC`;
+
+    const [rows] = await pool.query(query, params);
+
+    res.json(rows);
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ error: 'Failed to fetch nearby jobs' });
+  }
+};
