@@ -132,10 +132,10 @@ export default function Register() {
                         let displayAddress = formData.address;
                         
                         try {
-                          const res = await fetch(`https://nominatim.openstreetmap.org/reverse?format=json&lat=${lat}&lon=${lng}`);
+                          const res = await fetch(`https://api.bigdatacloud.net/data/reverse-geocode-client?latitude=${lat}&longitude=${lng}&localityLanguage=en`);
                           const data = await res.json();
-                          if (data && data.display_name) {
-                            displayAddress = data.display_name;
+                          if (data && data.city) {
+                            displayAddress = `${data.city}, ${data.principalSubdivision}`;
                           } else {
                             displayAddress = `GPS: ${lat.toFixed(4)}, ${lng.toFixed(4)}`;
                           }

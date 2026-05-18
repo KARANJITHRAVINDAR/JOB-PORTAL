@@ -79,3 +79,25 @@ export const login = async (req: Request, res: Response) => {
     res.status(500).json({ error: 'Internal server error' });
   }
 };
+
+export const updateProfile = async (req: Request, res: Response) => {
+  try {
+    const { id, name, phone, age, address, category_sought } = req.body;
+    if (!id) {
+      return res.status(400).json({ error: 'User ID is required' });
+    }
+
+    const query = `
+      UPDATE users 
+      SET name = ?, phone = ?, age = ?, address = ?, category_sought = ?
+      WHERE id = ?
+    `;
+
+    await pool.query(query, [name, phone, age || null, address || null, category_sought || null, id]);
+
+    res.json({ message: 'Profile updated successfully' });
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ error: 'Internal server error' });
+  }
+};

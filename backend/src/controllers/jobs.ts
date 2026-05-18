@@ -103,7 +103,7 @@ export const getNearbyJobs = async (req: Request, res: Response) => {
 
     // Using ST_Distance_Sphere (MySQL 5.7+) to get distance in meters
     let query = `
-      SELECT id, title, category, wage, status, ST_Distance_Sphere(location, ST_GeomFromText(?)) as distance
+      SELECT id, title, category, wage, status, latitude, longitude, ST_Distance_Sphere(location, ST_GeomFromText(?)) as distance
       FROM jobs
       WHERE ST_Distance_Sphere(location, ST_GeomFromText(?)) <= ?
       AND status != 'COMPLETED'
@@ -122,5 +122,77 @@ export const getNearbyJobs = async (req: Request, res: Response) => {
   } catch (error) {
     console.error(error);
     res.status(500).json({ error: 'Failed to fetch nearby jobs' });
+  }
+};
+
+export const getEmployerJobs = async (req: Request, res: Response) => {
+  try {
+    const { employerId } = req.params;
+    const query = `
+      SELECT j.*, 
+        (SELECT JSON_ARRAYAGG(JSON_OBJECT('id', a.id, 'worker_id', u.id, 'name', u.name, 'phone', u.phone, 'trust_score', u.trust_score, 'status', a.status, 'photo_url', u.photo_url))
+         FROM applications a JOIN users u ON a.worker_id = u.id 
+         WHERE a.job_id = j.id) as applications
+      FROM jobs j
+      WHERE j.employer_id = ?
+      ORDER BY j.created_at DESC
+    `;
+    const [rows]: any = await pool.query(query, [employerId]);
+    
+    // MySQL JSON_ARRAYAGG might return string or parsed array depending on driver, parse if string
+    const formatted = rows.map((r: any) => ({
+      ...r,
+      applications: typeof r.applications === 'string' ? JSON.parse(r.applications) : (r.applications || [])
+    }));
+    
+    res.json(formatted);
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ error: 'Failed to fetch employer jobs' });
+  }
+};
+
+export const acceptApplication = async (req: Request, res: Response) => {
+  const connection = await pool.getConnection();
+  try {
+    await connection.beginTransaction();
+    const { job_id, worker_id } = req.body;
+    
+    // Update application status to ACCEPTED
+    await connection.query(
+      `UPDATE applications SET status = 'ACCEPTED' WHERE job_id = ? AND worker_id = ?`,
+      [job_id, worker_id]
+    );
+    
+    // Fetch worker phone number
+    const [worker]: any = await connection.query(`SELECT name, phone FROM users WHERE id = ?`, [worker_id]);
+    
+    await connection.commit();
+    res.json({ message: 'Worker accepted', worker: worker[0] });
+  } catch (error) {
+    await connection.rollback();
+    console.error(error);
+    res.status(500).json({ error: 'Failed to accept application' });
+  } finally {
+    connection.release();
+  }
+};
+
+export const getSeekerApplications = async (req: Request, res: Response) => {
+  try {
+    const { workerId } = req.params;
+    const query = `
+      SELECT a.id as application_id, a.status, j.title, j.wage, j.category, u.name as employer_name, u.phone as employer_phone
+      FROM applications a
+      JOIN jobs j ON a.job_id = j.id
+      JOIN users u ON j.employer_id = u.id
+      WHERE a.worker_id = ?
+      ORDER BY a.created_at DESC
+    `;
+    const [rows] = await pool.query(query, [workerId]);
+    res.json(rows);
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ error: 'Failed to fetch seeker applications' });
   }
 };

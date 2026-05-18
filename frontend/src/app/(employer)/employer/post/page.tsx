@@ -17,34 +17,86 @@ export default function PostJob() {
     location: 'Current Location (GPS)',
   });
 
-  const handleVoiceProcess = async () => {
-    if (!voiceInput) return;
-    setLoading(true);
-    try {
-      const res = await fetch('http://localhost:4000/api/ai/extract-job', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ voice_text: voiceInput }),
-      });
-      const data = await res.json();
-      
-      setFormData(prev => ({
-        ...prev,
-        category: data.category || prev.category,
-        wage: data.estimated_wage ? data.estimated_wage.toString() : prev.wage,
-        title: `${data.category || 'Worker'} needed ${data.urgency === 'HIGH' ? 'urgently' : ''}`.trim(),
-      }));
-    } catch (e) {
-      console.error(e);
+  const handleVoiceProcess = () => {
+    const SpeechRecognition = window.SpeechRecognition || (window as any).webkitSpeechRecognition;
+    if (!SpeechRecognition) {
+      alert('Voice dictation is not supported in this browser.');
+      return;
     }
-    setLoading(false);
+    
+    const recognition = new SpeechRecognition();
+    recognition.lang = 'en-US';
+    recognition.interimResults = false;
+    
+    recognition.onstart = () => {
+      setLoading(true);
+    };
+
+    recognition.onresult = async (event: any) => {
+      const speechText = event.results[0][0].transcript;
+      setVoiceInput(speechText);
+      
+      try {
+        const res = await fetch('http://localhost:4000/api/ai/extract-job', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ voice_text: speechText }),
+        });
+        const data = await res.json();
+        
+        setFormData(prev => ({
+          ...prev,
+          category: data.category || prev.category,
+          wage: data.estimated_wage ? data.estimated_wage.toString() : prev.wage,
+          title: `${data.category || 'Worker'} needed ${data.urgency === 'HIGH' ? 'urgently' : ''}`.trim(),
+        }));
+      } catch (e) {
+        console.error(e);
+      }
+      setLoading(false);
+    };
+
+    recognition.onerror = (event: any) => {
+      setLoading(false);
+      alert('Voice error: ' + event.error);
+    };
+    
+    recognition.start();
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    // Simulate posting to API
-    alert('Job posted successfully to nearby workers!');
-    router.push('/employer/dashboard');
+    const userStr = localStorage.getItem('user');
+    if (!userStr) return alert("Please login first");
+    const user = JSON.parse(userStr);
+
+    try {
+      const res = await fetch('http://localhost:4000/api/jobs', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          employer_id: user.id,
+          title: formData.title,
+          category: formData.category,
+          slots_required: formData.slots_required,
+          wage: parseInt(formData.wage),
+          lat: user.lat || 11.6643,
+          lng: user.lng || 78.1460,
+          description: formData.title
+        })
+      });
+
+      if (res.ok) {
+        alert('Job posted successfully to nearby workers!');
+        router.push('/employer/dashboard');
+      } else {
+        const data = await res.json();
+        alert(data.error || 'Failed to post job');
+      }
+    } catch (e) {
+      console.error(e);
+      alert('Error posting job');
+    }
   };
 
   return (

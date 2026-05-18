@@ -1,7 +1,7 @@
 'use client';
 
 import { motion } from 'framer-motion';
-import { MapPin, Briefcase, Zap, Search, Mic, Map, ShieldCheck, CheckCircle } from 'lucide-react';
+import { MapPin, Briefcase, Zap, Search, Mic, Map, ShieldCheck, CheckCircle, Clock } from 'lucide-react';
 import Link from 'next/link';
 import { useState, useEffect } from 'react';
 
@@ -9,6 +9,7 @@ export default function SeekerDashboard() {
   const [available, setAvailable] = useState(true);
   const [user, setUser] = useState<any>(null);
   const [jobs, setJobs] = useState<any[]>([]);
+  const [applications, setApplications] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -17,12 +18,12 @@ export default function SeekerDashboard() {
       const parsed = JSON.parse(userData);
       setUser(parsed);
       fetchJobs(parsed);
+      fetchApplications(parsed.id);
     }
   }, []);
 
   const fetchJobs = async (userData: any) => {
     try {
-      // Use user's real coordinates or default to Salem
       const lat = userData.lat || 11.6643;
       const lng = userData.lng || 78.1460;
       
@@ -42,6 +43,18 @@ export default function SeekerDashboard() {
     setLoading(false);
   };
 
+  const fetchApplications = async (workerId: string) => {
+    try {
+      const res = await fetch(`http://localhost:4000/api/jobs/seeker/${workerId}`);
+      const data = await res.json();
+      if (Array.isArray(data)) {
+        setApplications(data);
+      }
+    } catch (e) {
+      console.error(e);
+    }
+  };
+
   const handleApply = async (jobId: string) => {
     if (!user) return;
     try {
@@ -55,6 +68,7 @@ export default function SeekerDashboard() {
         alert('Applied successfully! Status: ' + data.status);
         // Remove from feed
         setJobs(jobs.filter(j => j.id !== jobId));
+        fetchApplications(user.id);
       } else {
         alert(data.error || 'Failed to apply');
       }
@@ -97,11 +111,54 @@ export default function SeekerDashboard() {
           />
           <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400" size={20} />
           
-          <button className="absolute right-2 top-1/2 -translate-y-1/2 bg-neon-purple/20 hover:bg-neon-purple/40 p-2 rounded-xl border border-neon-purple/50 text-neon-purple transition-colors">
+          <button 
+            onClick={() => alert("Voice search logic handles dynamically on jobs page.")}
+            className="absolute right-2 top-1/2 -translate-y-1/2 bg-neon-purple/20 hover:bg-neon-purple/40 p-2 rounded-xl border border-neon-purple/50 text-neon-purple transition-colors"
+          >
             <Mic size={20} />
           </button>
         </div>
       </header>
+
+      {/* Accepted Applications Prompts */}
+      {applications.filter(a => a.status === 'ACCEPTED').map(app => (
+        <div key={app.application_id} className="bg-green-500/20 border border-green-500/50 p-6 rounded-2xl flex flex-col md:flex-row items-center justify-between text-left shadow-[0_0_30px_rgba(34,197,94,0.3)] animate-in slide-in-from-top-4">
+          <div className="flex items-center gap-4 mb-4 md:mb-0">
+            <div className="w-16 h-16 bg-green-500/20 text-green-400 rounded-full flex items-center justify-center shrink-0">
+              <CheckCircle size={32} />
+            </div>
+            <div>
+              <h2 className="text-xl font-bold text-white mb-1">You got the job!</h2>
+              <p className="text-gray-300 text-sm">Employer: <span className="text-white font-medium">{app.employer_name}</span> ({app.title})</p>
+            </div>
+          </div>
+          
+          <div className="flex flex-col items-center md:items-end">
+            <p className="text-xs text-gray-400 mb-1 uppercase tracking-widest">Contact Employer Now</p>
+            <div className="text-2xl font-mono text-neon-blue tracking-wider bg-black/40 px-6 py-2 rounded-xl border border-neon-blue/30">
+              {app.employer_phone}
+            </div>
+          </div>
+        </div>
+      ))}
+
+      {/* Status Tracker for Pending */}
+      {applications.filter(a => a.status === 'PENDING' || a.status === 'QUEUED').length > 0 && (
+        <div className="glass-card space-y-4">
+          <h3 className="font-semibold mb-2">Pending Applications</h3>
+          {applications.filter(a => a.status === 'PENDING' || a.status === 'QUEUED').map(app => (
+            <div key={app.application_id} className="flex gap-4 items-center bg-white/5 p-3 rounded-xl border border-white/10">
+              <div className="w-10 h-10 rounded-full bg-yellow-500/20 border border-yellow-500 flex items-center justify-center">
+                <Clock className="text-yellow-400" size={20} />
+              </div>
+              <div>
+                <h4 className="font-medium text-sm">{app.title}</h4>
+                <p className="text-xs text-gray-400">Status: {app.status}. Waiting for employer to accept.</p>
+              </div>
+            </div>
+          ))}
+        </div>
+      )}
 
       {/* Emergency Jobs - Uber Style ping */}
       {urgentJob && (
@@ -158,7 +215,7 @@ export default function SeekerDashboard() {
             <div className="text-center text-gray-400 py-4">No regular jobs found matching your category.</div>
           ) : (
             regularJobs.map((job, idx) => (
-              <div key={idx} className="glass-card hover:-translate-y-1 hover:border-white/30 cursor-pointer flex flex-col gap-3">
+              <div key={job.id} className="glass-card hover:-translate-y-1 hover:border-white/30 cursor-pointer flex flex-col gap-3">
                 <div className="flex justify-between items-start">
                   <div>
                     <h3 className="font-medium text-lg">{job.title}</h3>
@@ -182,25 +239,6 @@ export default function SeekerDashboard() {
           )}
         </div>
       </div>
-
-      {/* Status Tracker */}
-      <div className="glass-card">
-        <h3 className="font-semibold mb-4">Current Application Status</h3>
-        
-        <div className="flex gap-4 items-center">
-          <div className="w-10 h-10 rounded-full bg-neon-blue/20 border border-neon-blue flex items-center justify-center">
-            <CheckCircle className="text-neon-blue" size={20} />
-          </div>
-          <div>
-            <h4 className="font-medium">AC Mechanic - LG Showroom</h4>
-            <p className="text-sm text-gray-400">Accepted. Employer is waiting for you.</p>
-          </div>
-          <button className="ml-auto btn-neon py-1.5 px-4 text-sm">
-            Start Work
-          </button>
-        </div>
-      </div>
-
     </div>
   );
 }

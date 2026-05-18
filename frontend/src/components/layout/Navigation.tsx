@@ -11,8 +11,7 @@ export const BottomNav = ({ role }: { role: 'seeker' | 'employer' }) => {
   const seekerLinks = [
     { name: 'Home', href: '/seeker/dashboard', icon: Home },
     { name: 'Jobs', href: '/seeker/jobs', icon: Briefcase },
-    { name: 'Map', href: '/seeker/jobs', icon: Map },
-    { name: 'Messages', href: '/messages', icon: MessageSquare },
+    { name: 'Map', href: '/seeker/map', icon: Map },
     { name: 'Profile', href: '/seeker/profile', icon: User },
   ];
 
@@ -20,7 +19,6 @@ export const BottomNav = ({ role }: { role: 'seeker' | 'employer' }) => {
     { name: 'Dashboard', href: '/employer/dashboard', icon: Home },
     { name: 'Post', href: '/employer/post', icon: PlusCircle },
     { name: 'Workers', href: '/employer/workers', icon: Users },
-    { name: 'Messages', href: '/messages', icon: MessageSquare },
     { name: 'Profile', href: '/employer/profile', icon: User },
   ];
 
@@ -62,8 +60,7 @@ export const Sidebar = ({ role }: { role: 'seeker' | 'employer' }) => {
   const seekerLinks = [
     { name: 'Dashboard', href: '/seeker/dashboard', icon: Home },
     { name: 'Find Jobs', href: '/seeker/jobs', icon: Briefcase },
-    { name: 'Worker Radar Map', href: '/seeker/jobs', icon: Map },
-    { name: 'Messages', href: '/messages', icon: MessageSquare },
+    { name: 'Worker Radar Map', href: '/seeker/map', icon: Map },
     { name: 'My Profile', href: '/seeker/profile', icon: User },
   ];
 
@@ -71,7 +68,6 @@ export const Sidebar = ({ role }: { role: 'seeker' | 'employer' }) => {
     { name: 'Dashboard', href: '/employer/dashboard', icon: Home },
     { name: 'Post a Job', href: '/employer/post', icon: PlusCircle },
     { name: 'Worker Radar', href: '/employer/workers', icon: Users },
-    { name: 'Messages', href: '/messages', icon: MessageSquare },
     { name: 'Company Profile', href: '/employer/profile', icon: User },
   ];
 
@@ -117,7 +113,14 @@ export const Sidebar = ({ role }: { role: 'seeker' | 'employer' }) => {
       </nav>
 
       <div className="p-6 border-t border-white/10">
-        <button className="flex items-center gap-3 text-red-400 hover:text-red-300 transition-colors px-4 py-2 w-full text-left">
+        <button 
+          onClick={() => {
+            localStorage.removeItem('token');
+            localStorage.removeItem('user');
+            window.location.href = '/login';
+          }}
+          className="flex items-center gap-3 text-red-400 hover:text-red-300 transition-colors px-4 py-2 w-full text-left"
+        >
           <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"></path><polyline points="16 17 21 12 16 7"></polyline><line x1="21" y1="12" x2="9" y2="12"></line></svg>
           <span className="font-medium">Logout</span>
         </button>
