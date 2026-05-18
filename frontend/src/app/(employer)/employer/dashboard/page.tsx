@@ -113,6 +113,9 @@ export default function EmployerDashboard() {
             <h2 className="text-xl font-semibold flex items-center gap-2">
               <Zap className="text-neon-purple" /> Live Hiring Queue
             </h2>
+            <Link href="/employer/posted-jobs" className="text-sm text-neon-blue hover:underline">
+              Manage All Jobs
+            </Link>
           </div>
 
           {loading ? (

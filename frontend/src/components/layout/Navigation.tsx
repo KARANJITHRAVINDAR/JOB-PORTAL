@@ -2,7 +2,7 @@
 
 import { usePathname } from 'next/navigation';
 import Link from 'next/link';
-import { Home, Briefcase, Map, MessageSquare, User, PlusCircle, Users } from 'lucide-react';
+import { Home, Briefcase, Map, MessageSquare, User, PlusCircle, Users, ClipboardList } from 'lucide-react';
 import { motion } from 'framer-motion';
 
 export const BottomNav = ({ role }: { role: 'seeker' | 'employer' }) => {
@@ -17,6 +17,7 @@ export const BottomNav = ({ role }: { role: 'seeker' | 'employer' }) => {
 
   const employerLinks = [
     { name: 'Dashboard', href: '/employer/dashboard', icon: Home },
+    { name: 'Posted Jobs', href: '/employer/posted-jobs', icon: ClipboardList },
     { name: 'Post', href: '/employer/post', icon: PlusCircle },
     { name: 'Workers', href: '/employer/workers', icon: Users },
     { name: 'Profile', href: '/employer/profile', icon: User },
@@ -66,6 +67,7 @@ export const Sidebar = ({ role }: { role: 'seeker' | 'employer' }) => {
 
   const employerLinks = [
     { name: 'Dashboard', href: '/employer/dashboard', icon: Home },
+    { name: 'Posted Jobs', href: '/employer/posted-jobs', icon: ClipboardList },
     { name: 'Post a Job', href: '/employer/post', icon: PlusCircle },
     { name: 'Worker Radar', href: '/employer/workers', icon: Users },
     { name: 'Company Profile', href: '/employer/profile', icon: User },

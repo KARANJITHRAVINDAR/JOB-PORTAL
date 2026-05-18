@@ -196,3 +196,36 @@ export const getSeekerApplications = async (req: Request, res: Response) => {
     res.status(500).json({ error: 'Failed to fetch seeker applications' });
   }
 };
+
+export const editJob = async (req: Request, res: Response) => {
+  try {
+    const { id } = req.params;
+    const { title, wage, slots_required } = req.body;
+    
+    const query = `
+      UPDATE jobs 
+      SET title = ?, wage = ?, slots_required = ?
+      WHERE id = ?
+    `;
+    await pool.query(query, [title, wage, slots_required, id]);
+    
+    res.json({ message: 'Job updated successfully' });
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ error: 'Failed to update job' });
+  }
+};
+
+export const completeJob = async (req: Request, res: Response) => {
+  try {
+    const { id } = req.params;
+    
+    const query = `UPDATE jobs SET status = 'COMPLETED' WHERE id = ?`;
+    await pool.query(query, [id]);
+    
+    res.json({ message: 'Job marked as completed' });
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ error: 'Failed to complete job' });
+  }
+};
