@@ -70,7 +70,7 @@ export const login = async (req: Request, res: Response) => {
 
     res.json({
       message: 'Login successful',
-      user: { id: user.id, name: user.name, role: user.role, phone: user.phone },
+      user: { id: user.id, name: user.name, role: user.role, phone: user.phone, trust_score: user.trust_score, address: user.address, age: user.age, photo_url: user.photo_url, category_sought: user.category_sought },
       token
     });
 
@@ -96,6 +96,25 @@ export const updateProfile = async (req: Request, res: Response) => {
     await pool.query(query, [name, phone, age || null, address || null, category_sought || null, id]);
 
     res.json({ message: 'Profile updated successfully' });
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ error: 'Internal server error' });
+  }
+};
+
+export const getUser = async (req: Request, res: Response) => {
+  try {
+    const { id } = req.params;
+    const [rows]: any = await pool.query('SELECT * FROM users WHERE id = ?', [id]);
+    
+    if (rows.length === 0) {
+      return res.status(404).json({ error: 'User not found' });
+    }
+
+    const user = rows[0];
+    res.json({
+      id: user.id, name: user.name, role: user.role, phone: user.phone, trust_score: user.trust_score, address: user.address, age: user.age, photo_url: user.photo_url, category_sought: user.category_sought
+    });
   } catch (error) {
     console.error(error);
     res.status(500).json({ error: 'Internal server error' });

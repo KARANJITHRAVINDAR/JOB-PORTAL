@@ -20,6 +20,25 @@ export default function SeekerDashboard() {
       setUser(parsed);
       fetchJobs(parsed);
       fetchApplications(parsed.id);
+
+      const fetchLatestUser = () => {
+        fetch(`http://localhost:4000/api/auth/user/${parsed.id}`)
+          .then(res => res.json())
+          .then(latestUser => {
+            if (!latestUser.error) {
+              setUser(latestUser);
+              localStorage.setItem('user', JSON.stringify(latestUser));
+            }
+          })
+          .catch(e => console.error('Failed to fetch latest user data', e));
+      };
+
+      fetchLatestUser();
+      
+      window.addEventListener('refreshUserData', fetchLatestUser);
+      return () => {
+        window.removeEventListener('refreshUserData', fetchLatestUser);
+      };
     }
   }, []);
 

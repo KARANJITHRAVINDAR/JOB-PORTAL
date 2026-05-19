@@ -16,7 +16,11 @@ export default function NotificationBanner({ userId }: { userId: string }) {
         if (!res.ok) return; // Do not try to parse if the server returned an error (like 404 HTML)
         const data = await res.json();
         if (Array.isArray(data)) {
-          setNotifications(data.filter(n => !n.is_read));
+          const unread = data.filter(n => !n.is_read);
+          setNotifications(unread);
+          if (unread.length > 0) {
+            window.dispatchEvent(new Event('refreshUserData'));
+          }
         }
       } catch (e) {
         console.error(e);
