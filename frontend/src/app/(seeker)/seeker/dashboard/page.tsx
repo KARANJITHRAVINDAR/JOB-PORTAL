@@ -4,6 +4,7 @@ import { motion } from 'framer-motion';
 import { MapPin, Briefcase, Zap, Search, Mic, Map, ShieldCheck, CheckCircle, Clock } from 'lucide-react';
 import Link from 'next/link';
 import { useState, useEffect } from 'react';
+import NotificationBanner from '@/components/NotificationBanner';
 
 export default function SeekerDashboard() {
   const [available, setAvailable] = useState(true);
@@ -82,6 +83,7 @@ export default function SeekerDashboard() {
 
   return (
     <div className="space-y-8 animate-in fade-in duration-500 pb-20">
+      {user && <NotificationBanner userId={user.id} />}
       <header className="flex flex-col gap-4">
         <div className="flex justify-between items-center">
           <div>
@@ -117,6 +119,16 @@ export default function SeekerDashboard() {
           >
             <Mic size={20} />
           </button>
+        </div>
+
+        {/* Quick Links */}
+        <div className="flex gap-4">
+          <Link href="/seeker/my-jobs" className="bg-white/10 hover:bg-white/20 px-6 py-3 rounded-xl flex items-center gap-2 font-medium transition-colors">
+            <Briefcase size={18} className="text-neon-purple" /> My Jobs
+          </Link>
+          <Link href="/seeker/profile" className="bg-white/10 hover:bg-white/20 px-6 py-3 rounded-xl flex items-center gap-2 font-medium transition-colors">
+            <ShieldCheck size={18} className="text-green-400" /> My Profile
+          </Link>
         </div>
       </header>
 

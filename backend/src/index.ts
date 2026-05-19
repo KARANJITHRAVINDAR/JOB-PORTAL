@@ -4,9 +4,11 @@ import { Server } from 'socket.io';
 import cors from 'cors';
 import pool from './db';
 import authRoutes from './routes/auth';
-import jobRoutes from './routes/jobs';
+import jobsRoutes from './routes/jobs';
 import escrowRoutes from './routes/escrow';
 import aiRoutes from './routes/ai';
+import reportsRoutes from './routes/reports';
+import notificationsRoutes from './routes/notifications';
 import { setupSockets } from './socket';
 
 const app = express();
@@ -28,9 +30,11 @@ setupSockets(io);
 
 // Routes
 app.use('/api/auth', authRoutes);
-app.use('/api/jobs', jobRoutes);
+app.use('/api/jobs', jobsRoutes);
 app.use('/api/escrow', escrowRoutes);
 app.use('/api/ai', aiRoutes);
+app.use('/api/reports', reportsRoutes);
+app.use('/api/notifications', notificationsRoutes);
 
 // Basic Health Check Route
 app.get('/api/health', async (req, res) => {

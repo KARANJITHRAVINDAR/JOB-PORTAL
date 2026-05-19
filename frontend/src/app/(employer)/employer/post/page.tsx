@@ -15,10 +15,11 @@ export default function PostJob() {
     slots_required: 1,
     wage: '',
     location: 'Current Location (GPS)',
+    negotiable: false,
   });
 
   const handleVoiceProcess = () => {
-    const SpeechRecognition = window.SpeechRecognition || (window as any).webkitSpeechRecognition;
+    const SpeechRecognition = (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition;
     if (!SpeechRecognition) {
       alert('Voice dictation is not supported in this browser.');
       return;
@@ -82,7 +83,8 @@ export default function PostJob() {
           wage: parseInt(formData.wage),
           lat: user.lat || 11.6643,
           lng: user.lng || 78.1460,
-          description: formData.title
+          description: formData.title,
+          negotiable: formData.negotiable
         })
       });
 
@@ -192,6 +194,19 @@ export default function PostJob() {
               disabled
               className="w-full bg-black/40 border border-white/10 rounded-xl px-4 py-3 text-gray-400 cursor-not-allowed"
             />
+          </div>
+          
+          <div className="flex items-center justify-between bg-black/40 border border-white/10 rounded-xl px-4 py-3">
+            <label className="text-sm font-medium text-gray-300 flex items-center gap-2 cursor-pointer">
+              Job Negotiable
+            </label>
+            <button
+              type="button"
+              onClick={() => setFormData({...formData, negotiable: !formData.negotiable})}
+              className={`w-12 h-6 rounded-full transition-colors relative flex items-center ${formData.negotiable ? 'bg-neon-purple' : 'bg-gray-700'}`}
+            >
+              <div className={`w-4 h-4 rounded-full bg-white absolute top-1 transition-all ${formData.negotiable ? 'right-1' : 'left-1'}`}></div>
+            </button>
           </div>
         </div>
 

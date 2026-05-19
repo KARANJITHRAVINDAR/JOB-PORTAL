@@ -1,9 +1,10 @@
 'use client';
 
 import { motion } from 'framer-motion';
-import { MapPin, Briefcase, Zap, Users, ArrowRight, PlusCircle, Check } from 'lucide-react';
+import { MapPin, Briefcase, Zap, Users, ArrowRight, PlusCircle, Check, User, ShieldCheck } from 'lucide-react';
 import { useEffect, useState } from 'react';
 import Link from 'next/link';
+import NotificationBanner from '@/components/NotificationBanner';
 
 export default function EmployerDashboard() {
   const [user, setUser] = useState<any>(null);
@@ -56,6 +57,7 @@ export default function EmployerDashboard() {
 
   return (
     <div className="space-y-8 animate-in fade-in duration-500">
+      {user && <NotificationBanner userId={user.id} />}
       <header className="flex justify-between items-center">
         <div>
           <h1 className="text-2xl font-bold">Welcome back, {user?.name || 'Contractor'}</h1>

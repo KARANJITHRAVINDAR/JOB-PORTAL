@@ -1,8 +1,9 @@
 'use client';
 
 import { motion } from 'framer-motion';
-import { MapPin, Briefcase, Users, Check, CheckCircle, Edit, Trash, ChevronDown, Save, X } from 'lucide-react';
+import { MapPin, Briefcase, Users, Check, CheckCircle, Edit, Trash, ChevronDown, Save, X, AlertTriangle } from 'lucide-react';
 import { useEffect, useState } from 'react';
+import ReportModal from '@/components/ReportModal';
 
 export default function PostedJobs() {
   const [user, setUser] = useState<any>(null);
@@ -12,6 +13,7 @@ export default function PostedJobs() {
   const [editingJob, setEditingJob] = useState<string | null>(null);
   const [editForm, setEditForm] = useState({ title: '', wage: 0, slots_required: 1 });
   const [acceptedWorkerPhone, setAcceptedWorkerPhone] = useState<string | null>(null);
+  const [reportModal, setReportModal] = useState({ isOpen: false, reportedId: '', jobId: '' });
 
   useEffect(() => {
     const userData = localStorage.getItem('user');
@@ -225,8 +227,17 @@ export default function PostedJobs() {
                       <div className="space-y-2">
                         {accepted.map((app: any) => (
                           <div key={app.id} className="flex justify-between items-center bg-green-500/10 p-2 px-3 rounded-lg border border-green-500/20">
-                            <span className="text-sm font-medium">{app.name}</span>
-                            <span className="font-mono text-xs text-green-400">{app.phone}</span>
+                            <div className="flex flex-col">
+                              <span className="text-sm font-medium">{app.name}</span>
+                              <span className="font-mono text-xs text-green-400">{app.phone}</span>
+                            </div>
+                            <button
+                              onClick={() => setReportModal({ isOpen: true, reportedId: app.worker_id, jobId: job.id })}
+                              className="text-red-400/70 hover:text-red-400 transition-colors p-1"
+                              title="Report Worker"
+                            >
+                              <AlertTriangle size={16} />
+                            </button>
                           </div>
                         ))}
                       </div>
@@ -265,6 +276,15 @@ export default function PostedJobs() {
           })
         )}
       </div>
+
+      <ReportModal
+        isOpen={reportModal.isOpen}
+        onClose={() => setReportModal({ isOpen: false, reportedId: '', jobId: '' })}
+        reporterId={user?.id || ''}
+        reportedId={reportModal.reportedId}
+        jobId={reportModal.jobId}
+        targetType="worker"
+      />
     </div>
   );
 }

@@ -4,7 +4,7 @@ import crypto from 'crypto';
 
 export const postJob = async (req: Request, res: Response) => {
   try {
-    const { employer_id, title, category, description, slots_required, wage, lat, lng } = req.body;
+    const { employer_id, title, category, description, slots_required, wage, lat, lng, negotiable } = req.body;
 
     if (!employer_id || !title || !category || !lat || !lng) {
       return res.status(400).json({ error: 'Missing required job fields' });
@@ -13,15 +13,14 @@ export const postJob = async (req: Request, res: Response) => {
     const jobId = crypto.randomUUID();
 
     const query = `
-      INSERT INTO jobs (id, employer_id, title, category, description, slots_required, wage, latitude, longitude, location)
-      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ST_GeomFromText(?))
+      INSERT INTO jobs (id, employer_id, title, category, description, slots_required, wage, latitude, longitude, location, negotiable)
+      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ST_GeomFromText(?), ?)
     `;
 
-    const pointStr = `POINT(${lat} ${lng})`; // MySQL takes longitude then latitude in spatial functions conventionally, but POINT(lat lng) is often just a point. We'll use POINT(lat lng).
-    // Better: POINT(lng lat) standard for GIS, but let's just stick to lat lng consistency.
+    const pointStr = `POINT(${lat} ${lng})`;
 
     await pool.query(query, [
-      jobId, employer_id, title, category, description, slots_required || 1, wage, lat, lng, pointStr
+      jobId, employer_id, title, category, description, slots_required || 1, wage, lat, lng, pointStr, negotiable ? 1 : 0
     ]);
 
     res.status(201).json({ message: 'Job posted successfully', jobId });
@@ -182,12 +181,13 @@ export const getSeekerApplications = async (req: Request, res: Response) => {
   try {
     const { workerId } = req.params;
     const query = `
-      SELECT a.id as application_id, a.status, j.title, j.wage, j.category, u.name as employer_name, u.phone as employer_phone
+      SELECT a.id as application_id, a.status, j.id as job_id, j.title, j.wage, j.category, j.negotiable,
+             j.latitude, j.longitude, u.id as employer_id, u.name as employer_name, u.phone as employer_phone
       FROM applications a
       JOIN jobs j ON a.job_id = j.id
       JOIN users u ON j.employer_id = u.id
       WHERE a.worker_id = ?
-      ORDER BY a.created_at DESC
+      ORDER BY a.applied_at DESC
     `;
     const [rows] = await pool.query(query, [workerId]);
     res.json(rows);
@@ -217,15 +217,28 @@ export const editJob = async (req: Request, res: Response) => {
 };
 
 export const completeJob = async (req: Request, res: Response) => {
+  const connection = await pool.getConnection();
   try {
+    await connection.beginTransaction();
     const { id } = req.params;
     
+    // Update job status
     const query = `UPDATE jobs SET status = 'COMPLETED' WHERE id = ?`;
-    await pool.query(query, [id]);
+    await connection.query(query, [id]);
     
+    // Update all ACCEPTED applications to COMPLETED
+    await connection.query(
+      `UPDATE applications SET status = 'COMPLETED' WHERE job_id = ? AND status = 'ACCEPTED'`,
+      [id]
+    );
+
+    await connection.commit();
     res.json({ message: 'Job marked as completed' });
   } catch (error) {
+    await connection.rollback();
     console.error(error);
     res.status(500).json({ error: 'Failed to complete job' });
+  } finally {
+    connection.release();
   }
 };
