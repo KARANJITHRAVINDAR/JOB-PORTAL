@@ -37,8 +37,8 @@ export default function MyJobs() {
   };
 
   const appliedJobs = applications.filter(a => a.status === 'PENDING' || a.status === 'QUEUED');
-  const selectedJobs = applications.filter(a => a.status === 'ACCEPTED');
-  const completedJobs = applications.filter(a => a.status === 'COMPLETED');
+  const selectedJobs = applications.filter(a => a.status === 'ACCEPTED' && a.job_status !== 'COMPLETED');
+  const completedJobs = applications.filter(a => a.status === 'COMPLETED' || a.job_status === 'COMPLETED');
 
   const renderJobs = (jobsList: any[], type: 'applied' | 'selected' | 'completed') => {
     if (jobsList.length === 0) {
@@ -102,9 +102,9 @@ export default function MyJobs() {
               <div className="flex items-center gap-2 bg-black/30 p-2 rounded-lg border border-white/5 md:col-span-2">
                 <span className="text-gray-400 w-16 flex items-center gap-1"><MapPin size={14}/> Location:</span> 
                 <span className="text-gray-300">Lat: {Number(app.latitude || 0).toFixed(4)}, Lng: {Number(app.longitude || 0).toFixed(4)}</span>
-                <Link href={`/seeker/map?lat=${app.latitude}&lng=${app.longitude}`} className="ml-auto text-neon-purple hover:underline text-xs">
+                <a href={`https://www.google.com/maps/dir/?api=1&destination=${app.latitude},${app.longitude}`} target="_blank" rel="noopener noreferrer" className="ml-auto text-neon-purple hover:underline text-xs">
                   View on Map
-                </Link>
+                </a>
               </div>
             </div>
           </div>

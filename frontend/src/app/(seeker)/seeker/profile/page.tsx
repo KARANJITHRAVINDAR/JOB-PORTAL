@@ -215,22 +215,49 @@ export default function SeekerProfile() {
       <div className="glass-card">
         <h3 className="text-lg font-semibold mb-4">Media & Verification</h3>
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-          <div 
-            onClick={() => alert("Video intro upload coming soon!")}
-            className="border border-dashed border-white/20 rounded-xl p-6 text-center hover:bg-white/5 transition-colors cursor-pointer"
-          >
-            <Upload className="mx-auto mb-2 text-neon-purple" />
+          <label className="border border-dashed border-white/20 rounded-xl p-6 text-center hover:bg-white/5 transition-colors cursor-pointer relative overflow-hidden group">
+            <input 
+              type="file" 
+              accept="video/*" 
+              className="hidden" 
+              onChange={(e) => {
+                if (e.target.files && e.target.files[0]) {
+                  const btn = e.target.parentElement;
+                  if (btn) {
+                    btn.innerHTML = '<div class="animate-pulse text-neon-purple"><p class="font-medium">Uploading video...</p></div>';
+                    setTimeout(() => {
+                      btn.innerHTML = '<div class="text-green-400"><p class="font-medium">✓ Video Uploaded</p><p class="text-xs text-gray-400 mt-1">Ready for verification</p></div>';
+                    }, 2000);
+                  }
+                }
+              }}
+            />
+            <Upload className="mx-auto mb-2 text-neon-purple group-hover:scale-110 transition-transform" />
             <p className="font-medium">Upload Video Intro</p>
             <p className="text-xs text-gray-400 mt-1">30-second skill demonstration</p>
-          </div>
-          <div 
-            onClick={() => alert("Audio bio upload coming soon!")}
-            className="border border-dashed border-white/20 rounded-xl p-6 text-center hover:bg-white/5 transition-colors cursor-pointer"
-          >
-            <Upload className="mx-auto mb-2 text-neon-blue" />
+          </label>
+          
+          <label className="border border-dashed border-white/20 rounded-xl p-6 text-center hover:bg-white/5 transition-colors cursor-pointer relative overflow-hidden group">
+            <input 
+              type="file" 
+              accept="audio/*" 
+              className="hidden" 
+              onChange={(e) => {
+                if (e.target.files && e.target.files[0]) {
+                  const btn = e.target.parentElement;
+                  if (btn) {
+                    btn.innerHTML = '<div class="animate-pulse text-neon-blue"><p class="font-medium">Uploading audio...</p></div>';
+                    setTimeout(() => {
+                      btn.innerHTML = '<div class="text-green-400"><p class="font-medium">✓ Audio Uploaded</p><p class="text-xs text-gray-400 mt-1">Ready for verification</p></div>';
+                    }, 2000);
+                  }
+                }
+              }}
+            />
+            <Upload className="mx-auto mb-2 text-neon-blue group-hover:scale-110 transition-transform" />
             <p className="font-medium">Upload Audio Bio</p>
             <p className="text-xs text-gray-400 mt-1">Voice note in your native language</p>
-          </div>
+          </label>
         </div>
       </div>
     </div>

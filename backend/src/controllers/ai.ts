@@ -18,6 +18,7 @@ export const extractJobDetails = async (req: Request, res: Response) => {
       - urgency (e.g. HIGH, NORMAL)
       - estimated_wage (e.g. 500, or null if unknown)
       - intent (e.g. HIRE, WORK)
+      - workers_needed (integer, e.g. 2. Default to 1 if not specified)
     `;
 
     const response = await ai.models.generateContent({

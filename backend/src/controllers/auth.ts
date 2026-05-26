@@ -120,3 +120,34 @@ export const getUser = async (req: Request, res: Response) => {
     res.status(500).json({ error: 'Internal server error' });
   }
 };
+
+export const getNearbyWorkers = async (req: Request, res: Response) => {
+  try {
+    const { lat, lng, radiusKm = 20, category } = req.query;
+    if (!lat || !lng) return res.status(400).json({ error: 'Missing coordinates' });
+
+    const pointStr = `POINT(${lat} ${lng})`;
+    const radiusMeters = Number(radiusKm) * 1000;
+    const params: any[] = [pointStr, pointStr, radiusMeters];
+
+    let query = `
+      SELECT id, name, phone, role, trust_score, ST_X(location) as lat, ST_Y(location) as lng, category_sought, ST_Distance_Sphere(location, ST_GeomFromText(?)) as distance
+      FROM users
+      WHERE role = 'worker'
+      AND ST_Distance_Sphere(location, ST_GeomFromText(?)) <= ?
+    `;
+
+    if (category && category !== 'All') {
+      query += ` AND category_sought = ?`;
+      params.push(category);
+    }
+
+    query += ` ORDER BY distance ASC`;
+
+    const [rows] = await pool.query(query, params);
+    res.json(rows);
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ error: 'Failed to fetch nearby workers' });
+  }
+};

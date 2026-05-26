@@ -34,7 +34,7 @@ export default function SeekerDashboard() {
       };
 
       fetchLatestUser();
-      
+
       window.addEventListener('refreshUserData', fetchLatestUser);
       return () => {
         window.removeEventListener('refreshUserData', fetchLatestUser);
@@ -46,12 +46,12 @@ export default function SeekerDashboard() {
     try {
       const lat = userData.lat || 11.6643;
       const lng = userData.lng || 78.1460;
-      
+
       let url = `http://localhost:4000/api/jobs/nearby?lat=${lat}&lng=${lng}`;
       if (userData.category_sought) {
         url += `&category=${encodeURIComponent(userData.category_sought)}`;
       }
-      
+
       const res = await fetch(url);
       const data = await res.json();
       if (Array.isArray(data)) {
@@ -111,12 +111,11 @@ export default function SeekerDashboard() {
               <ShieldCheck size={14} className="text-green-400" /> Trust Score: {user?.trust_score || 100}/100
             </p>
           </div>
-          
-          <button 
+
+          <button
             onClick={() => setAvailable(!available)}
-            className={`px-4 py-2 rounded-full border text-sm font-medium transition-all duration-300 flex items-center gap-2 ${
-              available ? 'bg-green-500/20 border-green-500 text-green-400 shadow-[0_0_15px_rgba(34,197,94,0.3)]' : 'bg-gray-800 border-gray-600 text-gray-400'
-            }`}
+            className={`px-4 py-2 rounded-full border text-sm font-medium transition-all duration-300 flex items-center gap-2 ${available ? 'bg-green-500/20 border-green-500 text-green-400 shadow-[0_0_15px_rgba(34,197,94,0.3)]' : 'bg-gray-800 border-gray-600 text-gray-400'
+              }`}
           >
             <span className={`w-2 h-2 rounded-full ${available ? 'bg-green-400 animate-pulse' : 'bg-gray-500'}`}></span>
             {available ? 'Available Now' : 'Busy'}
@@ -125,14 +124,14 @@ export default function SeekerDashboard() {
 
         {/* AI Voice Search Bar */}
         <div className="relative">
-          <input 
-            type="text" 
-            placeholder="What kind of work are you looking for?" 
+          <input
+            type="text"
+            placeholder="What kind of work are you looking for?"
             className="w-full bg-white/5 border border-white/10 rounded-2xl py-4 pl-12 pr-16 text-white focus:outline-none focus:border-neon-purple focus:ring-1 focus:ring-neon-purple transition-all shadow-[0_0_15px_rgba(0,0,0,0.5)]"
           />
           <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400" size={20} />
-          
-          <button 
+
+          <button
             onClick={() => alert("Voice search logic handles dynamically on jobs page.")}
             className="absolute right-2 top-1/2 -translate-y-1/2 bg-neon-purple/20 hover:bg-neon-purple/40 p-2 rounded-xl border border-neon-purple/50 text-neon-purple transition-colors"
           >
@@ -163,7 +162,7 @@ export default function SeekerDashboard() {
               <p className="text-gray-300 text-sm">Employer: <span className="text-white font-medium">{app.employer_name}</span> ({app.title})</p>
             </div>
           </div>
-          
+
           <div className="flex flex-col items-center md:items-end">
             <p className="text-xs text-gray-400 mb-1 uppercase tracking-widest">Contact Employer Now</p>
             <div className="text-2xl font-mono text-neon-blue tracking-wider bg-black/40 px-6 py-2 rounded-xl border border-neon-blue/30">
@@ -191,42 +190,7 @@ export default function SeekerDashboard() {
         </div>
       )}
 
-      {/* Emergency Jobs - Uber Style ping */}
-      {urgentJob && (
-        <div className="glass-card bg-red-900/20 border-red-500/50 relative overflow-hidden group cursor-pointer">
-          <div className="absolute inset-0 bg-red-500/10 opacity-0 group-hover:opacity-100 transition-opacity"></div>
-          <div className="absolute top-0 right-0 bg-red-500/30 text-red-400 text-xs px-3 py-1 rounded-bl-lg flex items-center gap-1 font-bold tracking-wider">
-            <Zap size={12} className="animate-pulse" /> URGENT MATCH
-          </div>
-          
-          <div className="flex items-start gap-4">
-            <div className="w-12 h-12 rounded-xl bg-red-500/20 flex items-center justify-center shrink-0 border border-red-500/30">
-              <Briefcase className="text-red-400" />
-            </div>
-            <div>
-              <h3 className="text-lg font-bold">{urgentJob.title}</h3>
-              <div className="flex flex-wrap gap-x-4 gap-y-2 mt-2 text-sm text-gray-300">
-                <span className="flex items-center gap-1"><MapPin size={14} className="text-neon-blue" /> {(urgentJob.distance/1000).toFixed(1)} km away</span>
-                <span className="flex items-center gap-1"><Zap size={14} className="text-yellow-400" /> ₹{urgentJob.wage}</span>
-              </div>
-              <div className="mt-4 flex gap-3">
-                <button 
-                  onClick={() => handleApply(urgentJob.id)}
-                  className="bg-red-500 hover:bg-red-600 text-white px-6 py-2 rounded-xl font-medium transition-colors shadow-[0_0_15px_rgba(239,68,68,0.4)]"
-                >
-                  Accept Job
-                </button>
-                <button 
-                  onClick={() => setJobs(jobs.slice(1))}
-                  className="bg-white/5 hover:bg-white/10 px-4 py-2 rounded-xl transition-colors"
-                >
-                  Skip
-                </button>
-              </div>
-            </div>
-          </div>
-        </div>
-      )}
+
 
       {/* Regular Jobs Feed */}
       <div>
@@ -251,7 +215,7 @@ export default function SeekerDashboard() {
                   <div>
                     <h3 className="font-medium text-lg">{job.title}</h3>
                     <div className="flex gap-3 text-sm text-gray-400 mt-2">
-                      <span className="flex items-center gap-1"><MapPin size={14} /> {(job.distance/1000).toFixed(1)} km</span>
+                      <span className="flex items-center gap-1"><MapPin size={14} /> {(job.distance / 1000).toFixed(1)} km</span>
                       <span className="flex items-center gap-1 text-green-400"><Briefcase size={14} /> ₹{job.wage}</span>
                     </div>
                   </div>
@@ -259,7 +223,7 @@ export default function SeekerDashboard() {
                     {job.category}
                   </span>
                 </div>
-                <button 
+                <button
                   onClick={() => handleApply(job.id)}
                   className="bg-neon-purple/20 text-neon-purple hover:bg-neon-purple hover:text-white px-4 py-2 rounded-xl transition-colors font-medium text-sm w-max"
                 >

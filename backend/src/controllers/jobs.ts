@@ -137,13 +137,13 @@ export const getEmployerJobs = async (req: Request, res: Response) => {
       ORDER BY j.created_at DESC
     `;
     const [rows]: any = await pool.query(query, [employerId]);
-    
+
     // MySQL JSON_ARRAYAGG might return string or parsed array depending on driver, parse if string
     const formatted = rows.map((r: any) => ({
       ...r,
       applications: typeof r.applications === 'string' ? JSON.parse(r.applications) : (r.applications || [])
     }));
-    
+
     res.json(formatted);
   } catch (error) {
     console.error(error);
@@ -156,16 +156,16 @@ export const acceptApplication = async (req: Request, res: Response) => {
   try {
     await connection.beginTransaction();
     const { job_id, worker_id } = req.body;
-    
+
     // Update application status to ACCEPTED
     await connection.query(
       `UPDATE applications SET status = 'ACCEPTED' WHERE job_id = ? AND worker_id = ?`,
       [job_id, worker_id]
     );
-    
+
     // Fetch worker phone number
     const [worker]: any = await connection.query(`SELECT name, phone FROM users WHERE id = ?`, [worker_id]);
-    
+
     await connection.commit();
     res.json({ message: 'Worker accepted', worker: worker[0] });
   } catch (error) {
@@ -181,7 +181,7 @@ export const getSeekerApplications = async (req: Request, res: Response) => {
   try {
     const { workerId } = req.params;
     const query = `
-      SELECT a.id as application_id, a.status, j.id as job_id, j.title, j.wage, j.category, j.negotiable,
+      SELECT a.id as application_id, a.status, j.id as job_id, j.title, j.wage, j.category, j.negotiable, j.status as job_status,
              j.latitude, j.longitude, u.id as employer_id, u.name as employer_name, u.phone as employer_phone
       FROM applications a
       JOIN jobs j ON a.job_id = j.id
@@ -201,14 +201,14 @@ export const editJob = async (req: Request, res: Response) => {
   try {
     const { id } = req.params;
     const { title, wage, slots_required } = req.body;
-    
+
     const query = `
       UPDATE jobs 
       SET title = ?, wage = ?, slots_required = ?
       WHERE id = ?
     `;
     await pool.query(query, [title, wage, slots_required, id]);
-    
+
     res.json({ message: 'Job updated successfully' });
   } catch (error) {
     console.error(error);
@@ -221,14 +221,20 @@ export const completeJob = async (req: Request, res: Response) => {
   try {
     await connection.beginTransaction();
     const { id } = req.params;
-    
+
     // Update job status
     const query = `UPDATE jobs SET status = 'COMPLETED' WHERE id = ?`;
     await connection.query(query, [id]);
-    
+
     // Update all ACCEPTED applications to COMPLETED
     await connection.query(
       `UPDATE applications SET status = 'COMPLETED' WHERE job_id = ? AND status = 'ACCEPTED'`,
+      [id]
+    );
+
+    // Update all PENDING/QUEUED applications to REJECTED
+    await connection.query(
+      `UPDATE applications SET status = 'REJECTED' WHERE job_id = ? AND status IN ('PENDING', 'QUEUED')`,
       [id]
     );
 

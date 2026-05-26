@@ -24,11 +24,11 @@ export default function PostJob() {
       alert('Voice dictation is not supported in this browser.');
       return;
     }
-    
+
     const recognition = new SpeechRecognition();
     recognition.lang = 'en-US';
     recognition.interimResults = false;
-    
+
     recognition.onstart = () => {
       setLoading(true);
     };
@@ -36,7 +36,7 @@ export default function PostJob() {
     recognition.onresult = async (event: any) => {
       const speechText = event.results[0][0].transcript;
       setVoiceInput(speechText);
-      
+
       try {
         const res = await fetch('http://localhost:4000/api/ai/extract-job', {
           method: 'POST',
@@ -44,11 +44,12 @@ export default function PostJob() {
           body: JSON.stringify({ voice_text: speechText }),
         });
         const data = await res.json();
-        
+
         setFormData(prev => ({
           ...prev,
           category: data.category || prev.category,
           wage: data.estimated_wage ? data.estimated_wage.toString() : prev.wage,
+          slots_required: data.workers_needed || prev.slots_required,
           title: `${data.category || 'Worker'} needed ${data.urgency === 'HIGH' ? 'urgently' : ''}`.trim(),
         }));
       } catch (e) {
@@ -61,7 +62,7 @@ export default function PostJob() {
       setLoading(false);
       alert('Voice error: ' + event.error);
     };
-    
+
     recognition.start();
   };
 
@@ -115,16 +116,16 @@ export default function PostJob() {
           <Zap className="text-neon-purple" /> AI Voice Assistant
         </h2>
         <p className="text-sm text-gray-400 mb-4">Just say what you need, and Gemini AI will fill the form for you.</p>
-        
+
         <div className="flex gap-2">
-          <input 
-            type="text" 
+          <input
+            type="text"
             value={voiceInput}
             onChange={(e) => setVoiceInput(e.target.value)}
-            placeholder='Try: "Need 2 electricians urgently at Salem 4 roads"' 
+            placeholder='Try: "Need 2 electricians urgently at Salem 4 roads"'
             className="flex-1 bg-black/50 border border-white/10 rounded-xl px-4 py-3 text-white focus:outline-none focus:border-neon-purple/50"
           />
-          <button 
+          <button
             onClick={handleVoiceProcess}
             disabled={loading}
             className="bg-neon-purple/20 hover:bg-neon-purple/40 text-neon-purple border border-neon-purple/30 p-3 rounded-xl transition-colors shrink-0"
@@ -137,10 +138,10 @@ export default function PostJob() {
       <form onSubmit={handleSubmit} className="glass-card space-y-6">
         <div>
           <label className="block text-sm font-medium text-gray-300 mb-2">Job Title</label>
-          <input 
-            type="text" 
+          <input
+            type="text"
             value={formData.title}
-            onChange={e => setFormData({...formData, title: e.target.value})}
+            onChange={e => setFormData({ ...formData, title: e.target.value })}
             className="w-full bg-black/40 border border-white/10 rounded-xl px-4 py-3 text-white focus:outline-none focus:border-neon-blue"
             required
           />
@@ -148,10 +149,10 @@ export default function PostJob() {
 
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
           <div>
-            <label className="block text-sm font-medium text-gray-300 mb-2 flex items-center gap-2"><Briefcase size={16}/> Category</label>
-            <select 
+            <label className="block text-sm font-medium text-gray-300 mb-2 flex items-center gap-2"><Briefcase size={16} /> Category</label>
+            <select
               value={formData.category}
-              onChange={e => setFormData({...formData, category: e.target.value})}
+              onChange={e => setFormData({ ...formData, category: e.target.value })}
               className="w-full bg-black/40 border border-white/10 rounded-xl px-4 py-3 text-white focus:outline-none focus:border-neon-blue appearance-none"
             >
               <option value="">Select Category</option>
@@ -164,45 +165,45 @@ export default function PostJob() {
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-gray-300 mb-2 flex items-center gap-2"><Users size={16}/> Workers Needed</label>
-            <input 
-              type="number" 
+            <label className="block text-sm font-medium text-gray-300 mb-2 flex items-center gap-2"><Users size={16} /> Workers Needed</label>
+            <input
+              type="number"
               min="1"
               value={formData.slots_required}
-              onChange={e => setFormData({...formData, slots_required: parseInt(e.target.value)})}
+              onChange={e => setFormData({ ...formData, slots_required: parseInt(e.target.value) })}
               className="w-full bg-black/40 border border-white/10 rounded-xl px-4 py-3 text-white focus:outline-none focus:border-neon-blue"
               required
             />
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-gray-300 mb-2 flex items-center gap-2"><IndianRupee size={16}/> Estimated Wage (₹)</label>
-            <input 
-              type="number" 
+            <label className="block text-sm font-medium text-gray-300 mb-2 flex items-center gap-2"><IndianRupee size={16} /> Estimated Wage (₹)</label>
+            <input
+              type="number"
               value={formData.wage}
-              onChange={e => setFormData({...formData, wage: e.target.value})}
+              onChange={e => setFormData({ ...formData, wage: e.target.value })}
               className="w-full bg-black/40 border border-white/10 rounded-xl px-4 py-3 text-white focus:outline-none focus:border-neon-blue"
               required
             />
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-gray-300 mb-2 flex items-center gap-2"><MapPin size={16}/> Location</label>
-            <input 
-              type="text" 
+            <label className="block text-sm font-medium text-gray-300 mb-2 flex items-center gap-2"><MapPin size={16} /> Location</label>
+            <input
+              type="text"
               value={formData.location}
               disabled
               className="w-full bg-black/40 border border-white/10 rounded-xl px-4 py-3 text-gray-400 cursor-not-allowed"
             />
           </div>
-          
+
           <div className="flex items-center justify-between bg-black/40 border border-white/10 rounded-xl px-4 py-3">
             <label className="text-sm font-medium text-gray-300 flex items-center gap-2 cursor-pointer">
               Job Negotiable
             </label>
             <button
               type="button"
-              onClick={() => setFormData({...formData, negotiable: !formData.negotiable})}
+              onClick={() => setFormData({ ...formData, negotiable: !formData.negotiable })}
               className={`w-12 h-6 rounded-full transition-colors relative flex items-center ${formData.negotiable ? 'bg-neon-purple' : 'bg-gray-700'}`}
             >
               <div className={`w-4 h-4 rounded-full bg-white absolute top-1 transition-all ${formData.negotiable ? 'right-1' : 'left-1'}`}></div>
