@@ -248,3 +248,51 @@ export const completeJob = async (req: Request, res: Response) => {
     connection.release();
   }
 };
+
+export const rejectApplication = async (req: Request, res: Response) => {
+  const connection = await pool.getConnection();
+  try {
+    await connection.beginTransaction();
+    const { job_id, worker_id } = req.body;
+
+    // Update application status to REJECTED
+    await connection.query(
+      `UPDATE applications SET status = 'REJECTED' WHERE job_id = ? AND worker_id = ?`,
+      [job_id, worker_id]
+    );
+
+    // Promote a QUEUED applicant to PENDING if applicable
+    const [jobRows]: any = await connection.query('SELECT slots_required FROM jobs WHERE id = ?', [job_id]);
+    if (jobRows.length > 0) {
+      const slotsRequired = jobRows[0].slots_required;
+      const [pendingRows]: any = await connection.query(
+        "SELECT COUNT(*) as count FROM applications WHERE job_id = ? AND status IN ('PENDING', 'ACCEPTED')",
+        [job_id]
+      );
+      const currentFilled = pendingRows[0].count;
+
+      if (currentFilled < slotsRequired) {
+        // Find the first QUEUED application
+        const [queuedRows]: any = await connection.query(
+          "SELECT id FROM applications WHERE job_id = ? AND status = 'QUEUED' ORDER BY queue_position ASC LIMIT 1",
+          [job_id]
+        );
+        if (queuedRows.length > 0) {
+          await connection.query(
+            "UPDATE applications SET status = 'PENDING', queue_position = NULL WHERE id = ?",
+            [queuedRows[0].id]
+          );
+        }
+      }
+    }
+
+    await connection.commit();
+    res.json({ message: 'Worker rejected' });
+  } catch (error) {
+    await connection.rollback();
+    console.error(error);
+    res.status(500).json({ error: 'Failed to reject application' });
+  } finally {
+    connection.release();
+  }
+};

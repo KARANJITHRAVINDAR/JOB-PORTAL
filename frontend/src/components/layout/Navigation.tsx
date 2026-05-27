@@ -2,25 +2,28 @@
 
 import { usePathname } from 'next/navigation';
 import Link from 'next/link';
-import { Home, Briefcase, Map, MessageSquare, User, PlusCircle, Users, ClipboardList } from 'lucide-react';
+import { Home, Briefcase, Map, MessageSquare, User, PlusCircle, Users, ClipboardList, Globe } from 'lucide-react';
 import { motion } from 'framer-motion';
+import { useLanguage } from '@/context/LanguageContext';
 
 export const BottomNav = ({ role }: { role: 'seeker' | 'employer' }) => {
   const pathname = usePathname();
 
+  const { t } = useLanguage();
+
   const seekerLinks = [
-    { name: 'Home', href: '/seeker/dashboard', icon: Home },
-    { name: 'Jobs', href: '/seeker/jobs', icon: Briefcase },
-    { name: 'Map', href: '/seeker/map', icon: Map },
-    { name: 'Profile', href: '/seeker/profile', icon: User },
+    { name: t('nav_home'), href: '/seeker/dashboard', icon: Home },
+    { name: t('nav_jobs'), href: '/seeker/jobs', icon: Briefcase },
+    { name: t('nav_map'), href: '/seeker/map', icon: Map },
+    { name: t('nav_profile'), href: '/seeker/profile', icon: User },
   ];
 
   const employerLinks = [
-    { name: 'Dashboard', href: '/employer/dashboard', icon: Home },
-    { name: 'Posted Jobs', href: '/employer/posted-jobs', icon: ClipboardList },
-    { name: 'Post', href: '/employer/post', icon: PlusCircle },
-    { name: 'Workers', href: '/employer/workers', icon: Users },
-    { name: 'Profile', href: '/employer/profile', icon: User },
+    { name: t('nav_dashboard'), href: '/employer/dashboard', icon: Home },
+    { name: t('nav_posted_jobs'), href: '/employer/posted-jobs', icon: ClipboardList },
+    { name: t('nav_post'), href: '/employer/post', icon: PlusCircle },
+    { name: t('nav_workers'), href: '/employer/workers', icon: Users },
+    { name: t('nav_profile'), href: '/employer/profile', icon: User },
   ];
 
   const links = role === 'seeker' ? seekerLinks : employerLinks;
@@ -58,19 +61,21 @@ export const BottomNav = ({ role }: { role: 'seeker' | 'employer' }) => {
 export const Sidebar = ({ role }: { role: 'seeker' | 'employer' }) => {
   const pathname = usePathname();
 
+  const { t, language, setLanguage } = useLanguage();
+
   const seekerLinks = [
-    { name: 'Dashboard', href: '/seeker/dashboard', icon: Home },
-    { name: 'Find Jobs', href: '/seeker/jobs', icon: Briefcase },
-    { name: 'Worker Radar Map', href: '/seeker/map', icon: Map },
-    { name: 'My Profile', href: '/seeker/profile', icon: User },
+    { name: t('nav_dashboard'), href: '/seeker/dashboard', icon: Home },
+    { name: t('nav_find_jobs'), href: '/seeker/jobs', icon: Briefcase },
+    { name: t('nav_worker_radar'), href: '/seeker/map', icon: Map },
+    { name: t('nav_my_profile'), href: '/seeker/profile', icon: User },
   ];
 
   const employerLinks = [
-    { name: 'Dashboard', href: '/employer/dashboard', icon: Home },
-    { name: 'Posted Jobs', href: '/employer/posted-jobs', icon: ClipboardList },
-    { name: 'Post a Job', href: '/employer/post', icon: PlusCircle },
-    { name: 'Worker Radar', href: '/employer/workers', icon: Users },
-    { name: 'Company Profile', href: '/employer/profile', icon: User },
+    { name: t('nav_dashboard'), href: '/employer/dashboard', icon: Home },
+    { name: t('nav_posted_jobs'), href: '/employer/posted-jobs', icon: ClipboardList },
+    { name: t('nav_post_job'), href: '/employer/post', icon: PlusCircle },
+    { name: t('nav_worker_radar'), href: '/employer/workers', icon: Users },
+    { name: t('nav_company_profile'), href: '/employer/profile', icon: User },
   ];
 
   const links = role === 'seeker' ? seekerLinks : employerLinks;
@@ -81,7 +86,7 @@ export const Sidebar = ({ role }: { role: 'seeker' | 'employer' }) => {
         <h1 className="text-2xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-neon-blue to-neon-purple tracking-wider">
           Workforce OS
         </h1>
-        <p className="text-xs text-gray-500 uppercase tracking-widest mt-1">{role} portal</p>
+        <p className="text-xs text-gray-500 uppercase tracking-widest mt-1">{role} {t('nav_portal')}</p>
       </div>
 
       <nav className="flex-1 px-4 mt-6">
@@ -114,7 +119,19 @@ export const Sidebar = ({ role }: { role: 'seeker' | 'employer' }) => {
         </ul>
       </nav>
 
-      <div className="p-6 border-t border-white/10">
+      <div className="p-4 border-t border-white/10 flex flex-col gap-4">
+        <div className="flex items-center gap-3 px-4 py-2">
+          <Globe size={18} className="text-gray-400" />
+          <select 
+            value={language} 
+            onChange={(e) => setLanguage(e.target.value as any)}
+            className="bg-transparent text-sm text-gray-300 focus:outline-none appearance-none cursor-pointer"
+          >
+            <option value="en" className="bg-deep-black">English</option>
+            <option value="ta" className="bg-deep-black">தமிழ்</option>
+            <option value="hi" className="bg-deep-black">हिंदी</option>
+          </select>
+        </div>
         <button 
           onClick={() => {
             localStorage.removeItem('token');
@@ -124,7 +141,7 @@ export const Sidebar = ({ role }: { role: 'seeker' | 'employer' }) => {
           className="flex items-center gap-3 text-red-400 hover:text-red-300 transition-colors px-4 py-2 w-full text-left"
         >
           <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"></path><polyline points="16 17 21 12 16 7"></polyline><line x1="21" y1="12" x2="9" y2="12"></line></svg>
-          <span className="font-medium">Logout</span>
+          <span className="font-medium">{t('nav_logout')}</span>
         </button>
       </div>
     </aside>

@@ -150,6 +150,27 @@ export default function EmployerProfile() {
                 <p className="font-medium">{user.address || 'Location not specified.'}</p>
               )}
             </div>
+
+            <div className="space-y-1">
+              <label className="text-xs text-gray-500 flex items-center gap-1 uppercase tracking-wider">
+                <Briefcase size={12} /> Preferred Language
+              </label>
+              {isEditing ? (
+                <select 
+                  value={formData.preferred_language || 'English'}
+                  onChange={(e) => setFormData({...formData, preferred_language: e.target.value})}
+                  className="w-full bg-black/40 border border-white/10 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-neon-blue appearance-none"
+                >
+                  <option value="English">English</option>
+                  <option value="Tamil">Tamil</option>
+                  <option value="Hindi">Hindi</option>
+                </select>
+              ) : (
+                <p className="font-medium inline-flex px-3 py-1 rounded-md bg-white/5 border border-white/10">
+                  {user.preferred_language || 'English'}
+                </p>
+              )}
+            </div>
           </div>
         </div>
       </div>

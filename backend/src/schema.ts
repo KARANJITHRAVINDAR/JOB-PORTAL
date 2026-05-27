@@ -27,6 +27,7 @@ async function initSchema() {
         address TEXT,
         photo_url VARCHAR(255),
         category_sought VARCHAR(100),
+        preferred_language VARCHAR(50) DEFAULT 'English',
         trust_score INT DEFAULT 100,
         latitude DECIMAL(10, 8),
         longitude DECIMAL(11, 8),

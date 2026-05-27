@@ -57,6 +57,24 @@ export default function PostedJobs() {
     }
   };
 
+  const handleReject = async (jobId: string, workerId: string) => {
+    try {
+      const res = await fetch('http://localhost:4000/api/jobs/reject', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ job_id: jobId, worker_id: workerId })
+      });
+      if (res.ok) {
+        if (user) fetchEmployerJobs(user.id);
+      } else {
+        const data = await res.json();
+        alert(data.error || 'Failed to reject worker');
+      }
+    } catch (e) {
+      alert('Error rejecting worker');
+    }
+  };
+
   const handleCompleteJob = async (jobId: string) => {
     if (!confirm('Are you sure you want to mark this job as completed?')) return;
     try {
@@ -254,13 +272,21 @@ export default function PostedJobs() {
                               <span className="text-sm font-medium">{app.name}</span>
                               <span className="text-[10px] text-gray-400">Trust Score: {app.trust_score}</span>
                             </div>
-                            <button 
-                              onClick={() => handleAccept(job.id, app.worker_id)}
-                              disabled={accepted.length >= job.slots_required}
-                              className={`px-3 py-1 rounded-md text-xs font-medium transition-colors ${accepted.length >= job.slots_required ? 'bg-gray-800 text-gray-500' : 'bg-neon-purple/20 text-neon-purple hover:bg-neon-purple hover:text-white'}`}
-                            >
-                              Accept
-                            </button>
+                            <div className="flex gap-2">
+                              <button 
+                                onClick={() => handleAccept(job.id, app.worker_id)}
+                                disabled={accepted.length >= job.slots_required}
+                                className={`px-3 py-1 rounded-md text-xs font-medium transition-colors ${accepted.length >= job.slots_required ? 'bg-gray-800 text-gray-500' : 'bg-neon-purple/20 text-neon-purple hover:bg-neon-purple hover:text-white'}`}
+                              >
+                                Accept
+                              </button>
+                              <button 
+                                onClick={() => handleReject(job.id, app.worker_id)}
+                                className="px-3 py-1 rounded-md text-xs font-medium transition-colors bg-red-500/20 text-red-400 hover:bg-red-500 hover:text-white"
+                              >
+                                Reject
+                              </button>
+                            </div>
                           </div>
                         ))}
                       </div>

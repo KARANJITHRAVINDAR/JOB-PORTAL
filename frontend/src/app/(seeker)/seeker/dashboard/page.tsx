@@ -5,8 +5,10 @@ import { MapPin, Briefcase, Zap, Search, Mic, Map, ShieldCheck, CheckCircle, Clo
 import Link from 'next/link';
 import { useState, useEffect } from 'react';
 import NotificationBanner from '@/components/NotificationBanner';
+import { useLanguage } from '@/context/LanguageContext';
 
 export default function SeekerDashboard() {
+  const { t } = useLanguage();
   const [available, setAvailable] = useState(true);
   const [user, setUser] = useState<any>(null);
   const [jobs, setJobs] = useState<any[]>([]);
@@ -106,9 +108,9 @@ export default function SeekerDashboard() {
       <header className="flex flex-col gap-4">
         <div className="flex justify-between items-center">
           <div>
-            <h1 className="text-2xl font-bold">Hello, {user?.name || 'Worker'}</h1>
+            <h1 className="text-2xl font-bold">{t('welcome_back')}{user?.name || 'Worker'}</h1>
             <p className="text-sm text-gray-400 mt-1 flex items-center gap-1">
-              <ShieldCheck size={14} className="text-green-400" /> Trust Score: {user?.trust_score || 100}/100
+              <ShieldCheck size={14} className="text-green-400" /> {t('trust_score')}: {user?.trust_score || 100}/100
             </p>
           </div>
 
@@ -142,10 +144,10 @@ export default function SeekerDashboard() {
         {/* Quick Links */}
         <div className="flex gap-4">
           <Link href="/seeker/my-jobs" className="bg-white/10 hover:bg-white/20 px-6 py-3 rounded-xl flex items-center gap-2 font-medium transition-colors">
-            <Briefcase size={18} className="text-neon-purple" /> My Jobs
+            <Briefcase size={18} className="text-neon-purple" /> {t('my_jobs')}
           </Link>
           <Link href="/seeker/profile" className="bg-white/10 hover:bg-white/20 px-6 py-3 rounded-xl flex items-center gap-2 font-medium transition-colors">
-            <ShieldCheck size={18} className="text-green-400" /> My Profile
+            <ShieldCheck size={18} className="text-green-400" /> {t('nav_my_profile')}
           </Link>
         </div>
       </header>
@@ -196,10 +198,10 @@ export default function SeekerDashboard() {
       <div>
         <div className="flex justify-between items-center mb-4">
           <h2 className="text-xl font-semibold flex items-center gap-2">
-            <Map className="text-neon-blue" /> Nearby Opportunities
+            <Map className="text-neon-blue" /> {t('find_nearby_jobs')}
           </h2>
           <Link href="/seeker/jobs" className="text-sm text-neon-blue hover:text-white transition-colors">
-            View Map
+            {t('view_radar_map')}
           </Link>
         </div>
 
