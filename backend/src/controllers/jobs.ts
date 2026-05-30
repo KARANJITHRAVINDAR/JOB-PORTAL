@@ -46,17 +46,21 @@ export const applyJob = async (req: Request, res: Response) => {
 
     const slotsRequired = jobRows[0].slots_required;
 
+    // Get user squad_size
+    const [userRows]: any = await connection.query('SELECT squad_size FROM users WHERE id = ?', [worker_id]);
+    const squadSize = userRows.length > 0 ? userRows[0].squad_size : 1;
+
     const [pendingRows]: any = await connection.query(
-      "SELECT COUNT(*) as count FROM applications WHERE job_id = ? AND status IN ('PENDING', 'ACCEPTED') FOR UPDATE",
+      "SELECT SUM(slots_taken) as count FROM applications WHERE job_id = ? AND status IN ('PENDING', 'ACCEPTED') FOR UPDATE",
       [job_id]
     );
 
-    const currentFilled = pendingRows[0].count;
+    const currentFilled = pendingRows[0].count || 0;
 
     let newStatus = 'QUEUED';
     let queuePos = null;
 
-    if (currentFilled < slotsRequired) {
+    if (currentFilled + squadSize <= slotsRequired) {
       newStatus = 'PENDING';
     } else {
       // Find max queue position
@@ -70,8 +74,8 @@ export const applyJob = async (req: Request, res: Response) => {
     const applicationId = crypto.randomUUID();
 
     await connection.query(
-      `INSERT INTO applications (id, job_id, worker_id, status, queue_position) VALUES (?, ?, ?, ?, ?)`,
-      [applicationId, job_id, worker_id, newStatus, queuePos]
+      `INSERT INTO applications (id, job_id, worker_id, status, queue_position, slots_taken) VALUES (?, ?, ?, ?, ?, ?)`,
+      [applicationId, job_id, worker_id, newStatus, queuePos, squadSize]
     );
 
     await connection.commit();
@@ -129,7 +133,7 @@ export const getEmployerJobs = async (req: Request, res: Response) => {
     const { employerId } = req.params;
     const query = `
       SELECT j.*, 
-        (SELECT JSON_ARRAYAGG(JSON_OBJECT('id', a.id, 'worker_id', u.id, 'name', u.name, 'phone', u.phone, 'trust_score', u.trust_score, 'status', a.status, 'photo_url', u.photo_url))
+        (SELECT JSON_ARRAYAGG(JSON_OBJECT('id', a.id, 'worker_id', u.id, 'name', u.name, 'phone', u.phone, 'trust_score', u.trust_score, 'status', a.status, 'photo_url', u.photo_url, 'slots_taken', a.slots_taken))
          FROM applications a JOIN users u ON a.worker_id = u.id 
          WHERE a.job_id = j.id) as applications
       FROM jobs j
@@ -163,8 +167,21 @@ export const acceptApplication = async (req: Request, res: Response) => {
       [job_id, worker_id]
     );
 
-    // Fetch worker phone number
+    // Fetch worker phone number and application details
     const [worker]: any = await connection.query(`SELECT name, phone FROM users WHERE id = ?`, [worker_id]);
+
+    // Setup travel advance if job isn't completed
+    const [jobRows]: any = await connection.query(`SELECT wage FROM jobs WHERE id = ?`, [job_id]);
+    if (jobRows.length > 0) {
+      const advanceAmount = jobRows[0].wage * 0.1; // 10% advance
+      
+      const escrowId = crypto.randomUUID();
+      await connection.query(
+        `INSERT INTO wallet_escrows (id, job_id, employer_id, worker_id, amount, advance_paid, status) 
+         VALUES (?, ?, (SELECT employer_id FROM jobs WHERE id = ?), ?, ?, ?, 'PENDING')`,
+        [escrowId, job_id, job_id, worker_id, jobRows[0].wage, advanceAmount]
+      );
+    }
 
     await connection.commit();
     res.json({ message: 'Worker accepted', worker: worker[0] });
@@ -221,10 +238,17 @@ export const completeJob = async (req: Request, res: Response) => {
   try {
     await connection.beginTransaction();
     const { id } = req.params;
+    const { badges } = req.body; // e.g. ["Punctual", "Skilled"]
 
     // Update job status
     const query = `UPDATE jobs SET status = 'COMPLETED' WHERE id = ?`;
     await connection.query(query, [id]);
+
+    // Find all workers that were accepted for this job
+    const [acceptedRows]: any = await connection.query(
+      `SELECT worker_id FROM applications WHERE job_id = ? AND status = 'ACCEPTED'`,
+      [id]
+    );
 
     // Update all ACCEPTED applications to COMPLETED
     await connection.query(
@@ -238,8 +262,31 @@ export const completeJob = async (req: Request, res: Response) => {
       [id]
     );
 
+    // Award XP and Badges
+    const XP_PER_JOB = 50;
+    for (const row of acceptedRows) {
+      const workerId = row.worker_id;
+      // Add XP and handle leveling up (e.g. 100 XP per level)
+      await connection.query(
+        `UPDATE users SET xp = xp + ?, level = FLOOR((xp + ?)/100) + 1 WHERE id = ?`,
+        [XP_PER_JOB, XP_PER_JOB, workerId]
+      );
+
+      // Award badges if any
+      if (badges && Array.isArray(badges) && badges.length > 0) {
+        const badgeValues = badges.map(b => [workerId, b]);
+        await connection.query(
+          `INSERT INTO user_badges (user_id, badge_name) VALUES ?`,
+          [badgeValues]
+        );
+      }
+    }
+    
+    // Release escrows
+    await connection.query(`UPDATE wallet_escrows SET status = 'RELEASED' WHERE job_id = ? AND status = 'PENDING'`, [id]);
+
     await connection.commit();
-    res.json({ message: 'Job marked as completed' });
+    res.json({ message: 'Job marked as completed, badges and XP awarded, funds released' });
   } catch (error) {
     await connection.rollback();
     console.error(error);
@@ -266,16 +313,16 @@ export const rejectApplication = async (req: Request, res: Response) => {
     if (jobRows.length > 0) {
       const slotsRequired = jobRows[0].slots_required;
       const [pendingRows]: any = await connection.query(
-        "SELECT COUNT(*) as count FROM applications WHERE job_id = ? AND status IN ('PENDING', 'ACCEPTED')",
+        "SELECT SUM(slots_taken) as count FROM applications WHERE job_id = ? AND status IN ('PENDING', 'ACCEPTED')",
         [job_id]
       );
-      const currentFilled = pendingRows[0].count;
+      const currentFilled = pendingRows[0].count || 0;
 
       if (currentFilled < slotsRequired) {
-        // Find the first QUEUED application
+        // Find the first QUEUED application that fits
         const [queuedRows]: any = await connection.query(
-          "SELECT id FROM applications WHERE job_id = ? AND status = 'QUEUED' ORDER BY queue_position ASC LIMIT 1",
-          [job_id]
+          "SELECT id, slots_taken FROM applications WHERE job_id = ? AND status = 'QUEUED' AND slots_taken <= (? - ?) ORDER BY queue_position ASC LIMIT 1",
+          [job_id, slotsRequired, currentFilled]
         );
         if (queuedRows.length > 0) {
           await connection.query(

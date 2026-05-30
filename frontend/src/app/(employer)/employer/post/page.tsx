@@ -1,14 +1,15 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
-import { Mic, Briefcase, Users, IndianRupee, MapPin, Zap } from 'lucide-react';
+import { Mic, Briefcase, Users, IndianRupee, MapPin, Zap, TrendingUp } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 
 export default function PostJob() {
   const router = useRouter();
   const [voiceInput, setVoiceInput] = useState('');
   const [loading, setLoading] = useState(false);
+  const [surgeData, setSurgeData] = useState<{ is_high_demand: boolean; surge_multiplier: number } | null>(null);
   const [formData, setFormData] = useState({
     title: '',
     category: '',
@@ -17,6 +18,32 @@ export default function PostJob() {
     location: 'Current Location (GPS)',
     negotiable: false,
   });
+
+  useEffect(() => {
+    if (formData.category) {
+      checkSurgePricing(formData.category);
+    }
+  }, [formData.category]);
+
+  const checkSurgePricing = async (category: string) => {
+    const userStr = localStorage.getItem('user');
+    if (!userStr) return;
+    const user = JSON.parse(userStr);
+    try {
+      const lat = user.lat || 11.6643;
+      const lng = user.lng || 78.1460;
+      const res = await fetch(`http://localhost:4000/api/jobs/surge-estimate?lat=${lat}&lng=${lng}&category=${category}`);
+      const data = await res.json();
+      if (res.ok) {
+        setSurgeData(data);
+        if (data.is_high_demand && formData.wage) {
+           // Optionally auto-adjust wage or just let the user see the surge
+        }
+      }
+    } catch (e) {
+      console.error('Failed to check surge pricing', e);
+    }
+  };
 
   const handleVoiceProcess = () => {
     const SpeechRecognition = (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition;
@@ -134,6 +161,25 @@ export default function PostJob() {
           </button>
         </div>
       </motion.div>
+
+      {surgeData?.is_high_demand && (
+        <motion.div 
+          initial={{ opacity: 0, y: -10 }}
+          animate={{ opacity: 1, y: 0 }}
+          className="bg-red-500/10 border border-red-500/50 p-4 rounded-xl flex items-start gap-3"
+        >
+          <div className="bg-red-500/20 p-2 rounded-lg text-red-400 mt-1">
+            <TrendingUp size={20} />
+          </div>
+          <div>
+            <h3 className="text-red-400 font-bold">High Demand Zone</h3>
+            <p className="text-sm text-gray-300 mt-1">
+              There are more open jobs than available workers for <span className="font-semibold text-white">{formData.category}</span> in your area. 
+              We recommend increasing your wage by <span className="font-bold text-red-400">{surgeData.surge_multiplier}x</span> to attract workers faster.
+            </p>
+          </div>
+        </motion.div>
+      )}
 
       <form onSubmit={handleSubmit} className="glass-card space-y-6">
         <div>

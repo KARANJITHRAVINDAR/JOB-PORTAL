@@ -28,7 +28,10 @@ async function initSchema() {
         photo_url VARCHAR(255),
         category_sought VARCHAR(100),
         preferred_language VARCHAR(50) DEFAULT 'English',
+        xp INT DEFAULT 0,
+        level INT DEFAULT 1,
         trust_score INT DEFAULT 100,
+        squad_size INT DEFAULT 1,
         latitude DECIMAL(10, 8),
         longitude DECIMAL(11, 8),
         location POINT NOT NULL,
@@ -41,6 +44,14 @@ async function initSchema() {
         is_available BOOLEAN DEFAULT false,
         schedule_json JSON,
         updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+        FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
+      );`,
+
+      `CREATE TABLE IF NOT EXISTS user_badges (
+        id INT AUTO_INCREMENT PRIMARY KEY,
+        user_id VARCHAR(36) NOT NULL,
+        badge_name VARCHAR(100) NOT NULL,
+        awarded_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
         FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
       );`,
 
@@ -65,8 +76,10 @@ async function initSchema() {
         id VARCHAR(36) PRIMARY KEY,
         job_id VARCHAR(36) NOT NULL,
         worker_id VARCHAR(36) NOT NULL,
-        status ENUM('QUEUED', 'PENDING', 'ACCEPTED', 'REJECTED') DEFAULT 'QUEUED',
+        status ENUM('QUEUED', 'PENDING', 'ACCEPTED', 'REJECTED', 'IN_PROGRESS', 'COMPLETED') DEFAULT 'QUEUED',
         queue_position INT,
+        slots_taken INT DEFAULT 1,
+        clocked_in_at TIMESTAMP NULL,
         applied_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
         FOREIGN KEY (job_id) REFERENCES jobs(id),
         FOREIGN KEY (worker_id) REFERENCES users(id),
@@ -95,9 +108,25 @@ async function initSchema() {
         employer_id VARCHAR(36) NOT NULL,
         worker_id VARCHAR(36) NOT NULL,
         amount DECIMAL(10, 2) NOT NULL,
+        advance_paid DECIMAL(10, 2) DEFAULT 0,
         status ENUM('PENDING', 'HELD', 'RELEASED', 'REFUNDED', 'DISPUTED') DEFAULT 'PENDING',
         created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
         FOREIGN KEY (job_id) REFERENCES jobs(id)
+      );`,
+
+      `CREATE TABLE IF NOT EXISTS tools (
+        id VARCHAR(36) PRIMARY KEY,
+        owner_id VARCHAR(36) NOT NULL,
+        name VARCHAR(255) NOT NULL,
+        category VARCHAR(100),
+        hourly_rate DECIMAL(10, 2) NOT NULL,
+        status ENUM('AVAILABLE', 'RENTED', 'UNAVAILABLE') DEFAULT 'AVAILABLE',
+        latitude DECIMAL(10, 8),
+        longitude DECIMAL(11, 8),
+        location POINT NOT NULL,
+        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+        SPATIAL INDEX(location),
+        FOREIGN KEY (owner_id) REFERENCES users(id) ON DELETE CASCADE
       );`,
       
       `CREATE TABLE IF NOT EXISTS completion_otps (

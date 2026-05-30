@@ -1,11 +1,13 @@
 'use client';
 
 import { motion } from 'framer-motion';
-import { MapPin, Briefcase, Zap, Search, Mic, Map, ShieldCheck, CheckCircle, Clock } from 'lucide-react';
+import { MapPin, Briefcase, Zap, Search, Mic, Map, ShieldCheck, CheckCircle, Clock, X } from 'lucide-react';
 import Link from 'next/link';
 import { useState, useEffect } from 'react';
 import NotificationBanner from '@/components/NotificationBanner';
 import { useLanguage } from '@/context/LanguageContext';
+import VoiceAssistant from '@/components/VoiceAssistant';
+import QRScanner from '@/components/QRScanner';
 
 export default function SeekerDashboard() {
   const { t } = useLanguage();
@@ -14,6 +16,7 @@ export default function SeekerDashboard() {
   const [jobs, setJobs] = useState<any[]>([]);
   const [applications, setApplications] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
+  const [scanningJobId, setScanningJobId] = useState<string | null>(null);
 
   useEffect(() => {
     const userData = localStorage.getItem('user');
@@ -99,6 +102,29 @@ export default function SeekerDashboard() {
     }
   };
 
+  const handleClockIn = async (qrData: string) => {
+    try {
+      const data = JSON.parse(qrData);
+      const res = await fetch('http://localhost:4000/api/jobs/clock-in', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ job_id: data.jobId, worker_id: user.id })
+      });
+      const responseData = await res.json();
+      if (res.ok) {
+        alert('Successfully Clocked In!');
+        setScanningJobId(null);
+        fetchApplications(user.id);
+      } else {
+        alert(responseData.error || 'Failed to clock in');
+        setScanningJobId(null);
+      }
+    } catch (e) {
+      alert('Invalid QR Code');
+      setScanningJobId(null);
+    }
+  };
+
   const urgentJob = jobs.length > 0 ? jobs[0] : null;
   const regularJobs = jobs.slice(1);
 
@@ -133,21 +159,33 @@ export default function SeekerDashboard() {
           />
           <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400" size={20} />
 
-          <button
-            onClick={() => alert("Voice search logic handles dynamically on jobs page.")}
-            className="absolute right-2 top-1/2 -translate-y-1/2 bg-neon-purple/20 hover:bg-neon-purple/40 p-2 rounded-xl border border-neon-purple/50 text-neon-purple transition-colors"
-          >
-            <Mic size={20} />
-          </button>
+          <VoiceAssistant 
+            onIntentParsed={(category) => {
+              // Update user preference and refresh jobs
+              const updatedUser = { ...user, category_sought: category };
+              setUser(updatedUser);
+              fetchJobs(updatedUser);
+              
+              // Optionally update DB
+              fetch('http://localhost:4000/api/auth/profile', {
+                method: 'PUT',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ id: user.id, category_sought: category })
+              }).catch(e => console.error(e));
+            }} 
+          />
         </div>
 
         {/* Quick Links */}
-        <div className="flex gap-4">
+        <div className="flex flex-wrap gap-4">
           <Link href="/seeker/my-jobs" className="bg-white/10 hover:bg-white/20 px-6 py-3 rounded-xl flex items-center gap-2 font-medium transition-colors">
             <Briefcase size={18} className="text-neon-purple" /> {t('my_jobs')}
           </Link>
           <Link href="/seeker/profile" className="bg-white/10 hover:bg-white/20 px-6 py-3 rounded-xl flex items-center gap-2 font-medium transition-colors">
             <ShieldCheck size={18} className="text-green-400" /> {t('nav_my_profile')}
+          </Link>
+          <Link href="/tools" className="bg-white/10 hover:bg-white/20 px-6 py-3 rounded-xl flex items-center gap-2 font-medium transition-colors">
+            <span className="text-neon-blue">🛠️</span> Rent Tools
           </Link>
         </div>
       </header>
@@ -166,10 +204,23 @@ export default function SeekerDashboard() {
           </div>
 
           <div className="flex flex-col items-center md:items-end">
+            <p className="text-xs text-green-400 font-bold mb-2 uppercase tracking-widest bg-green-500/10 px-3 py-1 rounded-full border border-green-500/20">
+              Travel Advance Sent via UPI
+            </p>
             <p className="text-xs text-gray-400 mb-1 uppercase tracking-widest">Contact Employer Now</p>
-            <div className="text-2xl font-mono text-neon-blue tracking-wider bg-black/40 px-6 py-2 rounded-xl border border-neon-blue/30">
+            <div className="text-2xl font-mono text-neon-blue tracking-wider bg-black/40 px-6 py-2 rounded-xl border border-neon-blue/30 mb-2">
               {app.employer_phone}
             </div>
+            {app.status === 'ACCEPTED' ? (
+              <button 
+                onClick={() => setScanningJobId(app.job_id)}
+                className="text-xs px-4 py-2 bg-neon-purple text-white rounded-lg hover:bg-neon-purple/80 transition-colors flex items-center gap-1"
+              >
+                Scan QR to Clock In
+              </button>
+            ) : app.status === 'IN_PROGRESS' ? (
+              <span className="text-xs px-4 py-2 bg-neon-blue/20 text-neon-blue border border-neon-blue/30 rounded-lg">CLOCKED IN</span>
+            ) : null}
           </div>
         </div>
       ))}
@@ -236,6 +287,27 @@ export default function SeekerDashboard() {
           )}
         </div>
       </div>
+
+      {/* QR Scanner Modal */}
+      {scanningJobId && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm">
+          <div className="glass-card w-full max-w-md p-6 relative">
+            <button 
+              onClick={() => setScanningJobId(null)}
+              className="absolute top-4 right-4 text-gray-400 hover:text-white"
+            >
+              <X size={24} />
+            </button>
+            <h3 className="text-xl font-bold mb-4">Scan Employer's QR Code</h3>
+            <p className="text-sm text-gray-400 mb-4">
+              Point your camera at the employer's device to clock in securely.
+            </p>
+            <QRScanner 
+              onScanSuccess={handleClockIn}
+            />
+          </div>
+        </div>
+      )}
     </div>
   );
 }

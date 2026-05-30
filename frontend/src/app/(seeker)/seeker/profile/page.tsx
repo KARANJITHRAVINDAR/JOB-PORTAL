@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
-import { User, MapPin, Briefcase, Phone, Calendar, Upload, ShieldCheck, Check, X } from 'lucide-react';
+import { User, MapPin, Briefcase, Phone, Calendar, Upload, ShieldCheck, Check, X, Users } from 'lucide-react';
 
 export default function SeekerProfile() {
   const [user, setUser] = useState<any>(null);
@@ -16,6 +16,18 @@ export default function SeekerProfile() {
       const parsed = JSON.parse(userData);
       setUser(parsed);
       setFormData(parsed);
+      
+      // Fetch latest to get updated XP/Badges
+      fetch(`http://localhost:4000/api/auth/user/${parsed.id}`)
+        .then(res => res.json())
+        .then(latestUser => {
+          if (!latestUser.error) {
+            setUser(latestUser);
+            setFormData(latestUser);
+            localStorage.setItem('user', JSON.stringify(latestUser));
+          }
+        })
+        .catch(e => console.error('Failed to fetch latest user data', e));
     }
   }, []);
 
@@ -122,8 +134,27 @@ export default function SeekerProfile() {
             <p className="text-neon-blue text-sm font-medium mt-1">{user.category_sought || 'Worker'}</p>
           )}
           
-          <div className="mt-4 inline-flex items-center gap-1 bg-green-500/20 text-green-400 px-3 py-1 rounded-full text-xs font-bold tracking-wider border border-green-500/30">
-            <ShieldCheck size={14} /> TRUST SCORE: {user.trust_score || 100}
+          <div className="mt-4 inline-flex flex-col items-center gap-1 w-full">
+            <div className="bg-neon-purple/20 text-neon-purple px-4 py-1.5 rounded-full text-sm font-bold tracking-wider border border-neon-purple/30 mb-2">
+              LEVEL {user.level || 1}
+            </div>
+            
+            <div className="w-full max-w-[200px] space-y-1">
+              <div className="flex justify-between text-xs text-gray-400">
+                <span>XP</span>
+                <span>{user.xp || 0} / {((user.level || 1) * 100)}</span>
+              </div>
+              <div className="h-2 w-full bg-white/10 rounded-full overflow-hidden">
+                <div 
+                  className="h-full bg-neon-purple transition-all duration-1000" 
+                  style={{ width: `${((user.xp || 0) % 100)}%` }}
+                ></div>
+              </div>
+            </div>
+
+            <div className="mt-4 inline-flex items-center gap-1 bg-green-500/20 text-green-400 px-3 py-1 rounded-full text-xs font-bold tracking-wider border border-green-500/30">
+              <ShieldCheck size={14} /> TRUST SCORE: {user.trust_score || 100}
+            </div>
           </div>
         </div>
 
@@ -228,8 +259,53 @@ export default function SeekerProfile() {
                 </p>
               )}
             </div>
+            
+            <div className="space-y-1 md:col-span-2 mt-2 border-t border-white/5 pt-4">
+              <label className="text-xs text-gray-500 flex items-center gap-1 uppercase tracking-wider">
+                <Users size={12} /> Squad Size (Team Hiring)
+              </label>
+              {isEditing ? (
+                <div className="flex items-center gap-4">
+                  <input 
+                    type="range"
+                    min="1" max="10"
+                    value={formData.squad_size || 1}
+                    onChange={(e) => setFormData({...formData, squad_size: parseInt(e.target.value)})}
+                    className="flex-1 accent-neon-purple"
+                  />
+                  <span className="bg-black/40 border border-white/10 rounded-lg px-4 py-2 font-mono text-neon-purple font-bold">
+                    {formData.squad_size || 1}
+                  </span>
+                </div>
+              ) : (
+                <p className="font-medium inline-flex px-3 py-1 rounded-md bg-neon-purple/10 text-neon-purple border border-neon-purple/20">
+                  {user.squad_size > 1 ? `Squad of ${user.squad_size}` : 'Individual (1)'}
+                </p>
+              )}
+              <p className="text-xs text-gray-400 mt-1">If you lead a team of workers, increase your squad size. You will take up more slots when applying for jobs.</p>
+            </div>
           </div>
         </div>
+      </div>
+
+      {/* Badges Section */}
+      <div className="glass-card">
+        <h3 className="text-lg font-semibold mb-4 border-b border-white/10 pb-2 flex items-center gap-2">
+          <ShieldCheck className="text-yellow-400" /> Earned Skill Badges
+        </h3>
+        {user.badges && user.badges.length > 0 ? (
+          <div className="flex flex-wrap gap-3">
+            {user.badges.map((badge: string, i: number) => (
+              <div key={i} className="bg-yellow-500/20 border border-yellow-500/50 text-yellow-400 px-4 py-2 rounded-xl text-sm font-bold flex items-center gap-2 shadow-[0_0_15px_rgba(234,179,8,0.2)]">
+                <Check size={16} /> {badge}
+              </div>
+            ))}
+          </div>
+        ) : (
+          <div className="text-gray-500 text-sm text-center py-6 bg-black/30 rounded-xl border border-white/5">
+            Complete jobs and get reviewed by employers to earn skill badges!
+          </div>
+        )}
       </div>
       
       {/* Media Uploads Section */}

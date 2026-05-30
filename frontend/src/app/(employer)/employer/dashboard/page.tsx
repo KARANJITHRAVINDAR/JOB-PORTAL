@@ -78,14 +78,19 @@ export default function EmployerDashboard() {
   return (
     <div className="space-y-8 animate-in fade-in duration-500">
       {user && <NotificationBanner userId={user.id} />}
-      <header className="flex justify-between items-center">
+      <header className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
         <div>
           <h1 className="text-2xl font-bold">{t('welcome_back')}{user?.name || 'Contractor'}</h1>
           <p className="text-sm text-gray-400 mt-1">{t('manage_workforce')}</p>
         </div>
-        <Link href="/employer/post" className="btn-neon hidden md:flex items-center gap-2">
-          {t('post_new_request')}
-        </Link>
+        <div className="flex items-center gap-4">
+          <Link href="/tools" className="bg-white/10 hover:bg-white/20 px-4 py-2 rounded-xl flex items-center gap-2 font-medium transition-colors hidden md:flex">
+            <span className="text-neon-blue">🛠️</span> Rent Tools
+          </Link>
+          <Link href="/employer/post" className="btn-neon hidden md:flex items-center gap-2">
+            {t('post_new_request')}
+          </Link>
+        </div>
       </header>
 
       {/* Prominent Match Alert */}

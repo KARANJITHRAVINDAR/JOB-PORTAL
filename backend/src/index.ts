@@ -9,6 +9,7 @@ import escrowRoutes from './routes/escrow';
 import aiRoutes from './routes/ai';
 import reportsRoutes from './routes/reports';
 import notificationsRoutes from './routes/notifications';
+import toolsRoutes from './routes/tools';
 import { setupSockets } from './socket';
 
 const app = express();
@@ -35,6 +36,7 @@ app.use('/api/escrow', escrowRoutes);
 app.use('/api/ai', aiRoutes);
 app.use('/api/reports', reportsRoutes);
 app.use('/api/notifications', notificationsRoutes);
+app.use('/api/tools', toolsRoutes);
 
 // Basic Health Check Route
 app.get('/api/health', async (req, res) => {

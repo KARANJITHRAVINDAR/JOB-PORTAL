@@ -66,11 +66,16 @@ export const login = async (req: Request, res: Response) => {
     }
 
     const user = rows[0];
+    
+    // Fetch badges
+    const [badgeRows]: any = await pool.query('SELECT badge_name FROM user_badges WHERE user_id = ?', [user.id]);
+    const badges = badgeRows.map((r: any) => r.badge_name);
+
     const token = jwt.sign({ id: user.id, role: user.role }, JWT_SECRET, { expiresIn: '7d' });
 
     res.json({
       message: 'Login successful',
-      user: { id: user.id, name: user.name, role: user.role, phone: user.phone, trust_score: user.trust_score, address: user.address, age: user.age, photo_url: user.photo_url, category_sought: user.category_sought, preferred_language: user.preferred_language },
+      user: { id: user.id, name: user.name, role: user.role, phone: user.phone, trust_score: user.trust_score, address: user.address, age: user.age, photo_url: user.photo_url, category_sought: user.category_sought, preferred_language: user.preferred_language, xp: user.xp || 0, level: user.level || 1, badges, squad_size: user.squad_size || 1 },
       token
     });
 
@@ -82,18 +87,18 @@ export const login = async (req: Request, res: Response) => {
 
 export const updateProfile = async (req: Request, res: Response) => {
   try {
-    const { id, name, phone, age, address, category_sought, preferred_language } = req.body;
+    const { id, name, phone, age, address, category_sought, preferred_language, squad_size } = req.body;
     if (!id) {
       return res.status(400).json({ error: 'User ID is required' });
     }
 
     const query = `
       UPDATE users 
-      SET name = ?, phone = ?, age = ?, address = ?, category_sought = ?, preferred_language = ?
+      SET name = ?, phone = ?, age = ?, address = ?, category_sought = ?, preferred_language = ?, squad_size = ?
       WHERE id = ?
     `;
 
-    await pool.query(query, [name, phone, age || null, address || null, category_sought || null, preferred_language || 'English', id]);
+    await pool.query(query, [name, phone, age || null, address || null, category_sought || null, preferred_language || 'English', squad_size || 1, id]);
 
     res.json({ message: 'Profile updated successfully' });
   } catch (error) {
@@ -112,8 +117,13 @@ export const getUser = async (req: Request, res: Response) => {
     }
 
     const user = rows[0];
+    
+    // Fetch badges
+    const [badgeRows]: any = await pool.query('SELECT badge_name FROM user_badges WHERE user_id = ?', [user.id]);
+    const badges = badgeRows.map((r: any) => r.badge_name);
+
     res.json({
-      id: user.id, name: user.name, role: user.role, phone: user.phone, trust_score: user.trust_score, address: user.address, age: user.age, photo_url: user.photo_url, category_sought: user.category_sought, preferred_language: user.preferred_language
+      id: user.id, name: user.name, role: user.role, phone: user.phone, trust_score: user.trust_score, address: user.address, age: user.age, photo_url: user.photo_url, category_sought: user.category_sought, preferred_language: user.preferred_language, xp: user.xp || 0, level: user.level || 1, badges, squad_size: user.squad_size || 1
     });
   } catch (error) {
     console.error(error);
