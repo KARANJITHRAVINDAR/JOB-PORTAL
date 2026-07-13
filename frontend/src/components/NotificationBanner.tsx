@@ -53,14 +53,15 @@ export default function NotificationBanner({ userId }: { userId: string }) {
             initial={{ opacity: 0, x: 50 }}
             animate={{ opacity: 1, x: 0 }}
             exit={{ opacity: 0, scale: 0.9 }}
-            className="bg-red-500/20 border border-red-500/50 p-4 rounded-xl flex items-start gap-3 shadow-[0_0_20px_rgba(239,68,68,0.2)] backdrop-blur-md"
+            className="p-4 rounded-xl flex items-start gap-3 shadow-[0_10px_30px_rgba(239,68,68,0.2)]"
+            style={{ background: 'rgba(239,68,68,0.1)', backdropFilter: 'blur(16px)', border: '1px solid rgba(239,68,68,0.3)' }}
           >
             <div className="mt-0.5 text-red-400 shrink-0">
               <Bell size={18} className="animate-pulse" />
             </div>
             <div className="flex-1">
-              <p className="text-sm text-gray-200">{notification.message}</p>
-              <p className="text-[10px] text-gray-400 mt-1 uppercase">Trust Score Alert</p>
+              <p className="text-sm text-text-primary font-medium">{notification.message}</p>
+              <p className="text-[10px] text-text-muted mt-1 uppercase tracking-widest font-mono">Trust Score Alert</p>
             </div>
             <button 
               onClick={() => markAsRead(notification.id)}

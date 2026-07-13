@@ -98,7 +98,7 @@ export default function VoiceAssistant({ onIntentParsed }: { onIntentParsed: (ca
           setIsOpen(true);
           startListening();
         }}
-        className="absolute right-2 top-1/2 -translate-y-1/2 bg-neon-purple/20 hover:bg-neon-purple/40 p-2 rounded-xl border border-neon-purple/50 text-neon-purple transition-colors flex items-center justify-center z-10"
+        className="absolute right-2 top-1/2 -translate-y-1/2 bg-violet/20 hover:bg-violet/40 p-2.5 rounded-xl border border-violet/30 text-violet transition-all duration-200 flex items-center justify-center z-10 hover:scale-105 active:scale-95"
         title="Voice Search"
       >
         <Mic size={20} />
@@ -110,35 +110,35 @@ export default function VoiceAssistant({ onIntentParsed }: { onIntentParsed: (ca
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
-            className="fixed inset-0 z-50 flex items-end justify-center bg-black/80 backdrop-blur-sm p-4 pb-24"
+            className="fixed inset-0 z-50 flex items-end justify-center bg-bg-void/85 backdrop-blur-sm p-4 pb-24"
           >
             <motion.div 
               initial={{ y: 100, scale: 0.9 }}
               animate={{ y: 0, scale: 1 }}
               exit={{ y: 100, scale: 0.9 }}
-              className="glass-card w-full max-w-md p-8 rounded-3xl border border-neon-purple/50 relative overflow-hidden flex flex-col items-center text-center"
+              className="glass-card w-full max-w-md p-8 rounded-3xl border border-line relative overflow-hidden flex flex-col items-center text-center bg-bg-surface"
             >
               <button 
                 onClick={() => setIsOpen(false)}
-                className="absolute top-4 right-4 text-gray-400 hover:text-white"
+                className="absolute top-4 right-4 text-text-muted hover:text-text-primary transition-colors"
               >
                 <X size={24} />
               </button>
 
-              <h2 className="text-xl font-bold mb-6 text-white">Voice Assistant</h2>
+              <h2 className="text-xl font-display font-bold mb-6 text-text-primary">Voice Assistant</h2>
               
               <div className="relative mb-8">
                 {isListening && (
-                  <div className="absolute inset-0 bg-neon-purple/30 rounded-full animate-ping scale-150"></div>
+                  <div className="absolute inset-0 bg-violet/20 rounded-full animate-ping scale-150"></div>
                 )}
-                <div className={`w-24 h-24 rounded-full flex items-center justify-center relative z-10 shadow-[0_0_30px_rgba(176,38,255,0.5)] transition-colors duration-500 ${isListening ? 'bg-neon-purple text-white' : 'bg-gray-800 text-gray-400'}`}>
+                <div className={`w-24 h-24 rounded-full flex items-center justify-center relative z-10 shadow-[0_0_30px_rgba(139,92,246,0.2)] transition-colors duration-500 ${isListening ? 'bg-violet text-text-primary' : 'bg-bg-surface-raised text-text-muted border border-line'}`}>
                   <Mic size={48} />
                 </div>
               </div>
 
               <div className="min-h-[60px] flex flex-col justify-center">
-                <p className="text-lg font-medium text-gray-200 mb-1">"{transcript || '...'}"</p>
-                <p className={`text-sm ${statusText.includes('Error') || statusText.includes('Sorry') ? 'text-red-400' : 'text-neon-purple'}`}>
+                <p className="text-lg font-medium text-text-primary mb-1">"{transcript || '...'}"</p>
+                <p className={`text-sm font-semibold ${statusText.includes('Error') || statusText.includes('Sorry') ? 'text-marigold' : 'text-violet'}`}>
                   {statusText}
                 </p>
               </div>
@@ -146,7 +146,7 @@ export default function VoiceAssistant({ onIntentParsed }: { onIntentParsed: (ca
               {!isListening && !statusText.includes('match') && (
                 <button 
                   onClick={startListening}
-                  className="mt-6 px-6 py-2 rounded-full border border-neon-purple text-neon-purple hover:bg-neon-purple hover:text-white transition-colors"
+                  className="mt-6 px-6 py-2.5 rounded-full border border-violet text-violet hover:bg-violet hover:text-text-primary transition-all duration-200 active:scale-95 font-semibold"
                 >
                   Tap to speak again
                 </button>

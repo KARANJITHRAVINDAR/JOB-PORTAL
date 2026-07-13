@@ -1,11 +1,13 @@
 'use client';
 
 import { motion } from 'framer-motion';
-import { MapPin, Briefcase, Zap, Users, ArrowRight, PlusCircle, Check, User, ShieldCheck } from 'lucide-react';
+import { MapPin, Briefcase, Zap, Users, PlusCircle, Check, User, ShieldCheck } from 'lucide-react';
 import { useEffect, useState } from 'react';
 import Link from 'next/link';
 import NotificationBanner from '@/components/NotificationBanner';
 import { useLanguage } from '@/context/LanguageContext';
+import Button from '@/components/Button';
+import { FloatingOrbs, staggerContainer, fadeUp, PageHeader } from '@/components/DesignSystem';
 
 export default function EmployerDashboard() {
   const { t } = useLanguage();
@@ -28,195 +30,189 @@ export default function EmployerDashboard() {
     try {
       const res = await fetch(`http://localhost:4000/api/jobs/employer/${employerId}`);
       const data = await res.json();
-      if (Array.isArray(data)) {
-        setJobs(data);
-      }
-    } catch (e) {
-      console.error(e);
-    }
+      if (Array.isArray(data)) setJobs(data);
+    } catch (e) { console.error(e); }
     setLoading(false);
   };
 
   const handleAccept = async (jobId: string, workerId: string) => {
     try {
       const res = await fetch('http://localhost:4000/api/jobs/accept', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        method: 'POST', headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ job_id: jobId, worker_id: workerId })
       });
       const data = await res.json();
-      if (res.ok) {
-        setAcceptedWorkerPhone(data.worker.phone);
-        // Refresh jobs to show updated status
-        if (user) fetchEmployerJobs(user.id);
-      } else {
-        alert(data.error || 'Failed to accept worker');
-      }
-    } catch (e) {
-      alert('Error accepting worker');
-    }
+      if (res.ok) { setAcceptedWorkerPhone(data.worker.phone); if (user) fetchEmployerJobs(user.id); }
+      else alert(data.error || 'Failed to accept worker');
+    } catch { alert('Error accepting worker'); }
   };
 
   const handleReject = async (jobId: string, workerId: string) => {
     try {
       const res = await fetch('http://localhost:4000/api/jobs/reject', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        method: 'POST', headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ job_id: jobId, worker_id: workerId })
       });
-      if (res.ok) {
-        if (user) fetchEmployerJobs(user.id);
-      } else {
-        const data = await res.json();
-        alert(data.error || 'Failed to reject worker');
-      }
-    } catch (e) {
-      alert('Error rejecting worker');
-    }
+      if (res.ok) { if (user) fetchEmployerJobs(user.id); }
+      else { const data = await res.json(); alert(data.error || 'Failed to reject'); }
+    } catch { alert('Error rejecting worker'); }
   };
 
+  const stats = [
+    { title: t('active_jobs'), value: jobs.length.toString(), icon: Briefcase, color: '#8B5CF6' },
+    { title: t('total_applicants'), value: jobs.reduce((acc, job) => acc + (job.applications?.length || 0), 0).toString(), icon: Users, color: '#34D399' },
+    { title: t('nearby_workers'), value: '45', icon: MapPin, color: '#F2A93B' },
+    { title: t('escrow_held'), value: '₹4,500', icon: Zap, color: '#00f0ff' },
+  ];
+
   return (
-    <div className="space-y-8 animate-in fade-in duration-500">
-      {user && <NotificationBanner userId={user.id} />}
-      <header className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
-        <div>
-          <h1 className="text-2xl font-bold">{t('welcome_back')}{user?.name || 'Contractor'}</h1>
-          <p className="text-sm text-gray-400 mt-1">{t('manage_workforce')}</p>
-        </div>
-        <div className="flex items-center gap-4">
-          <Link href="/tools" className="bg-white/10 hover:bg-white/20 px-4 py-2 rounded-xl flex items-center gap-2 font-medium transition-colors hidden md:flex">
-            <span className="text-neon-blue">🛠️</span> Rent Tools
-          </Link>
-          <Link href="/employer/post" className="btn-neon hidden md:flex items-center gap-2">
-            {t('post_new_request')}
-          </Link>
-        </div>
-      </header>
+    <div className="relative min-h-screen pb-20">
+      <FloatingOrbs />
+      <motion.div variants={staggerContainer} initial="hidden" animate="show" className="relative z-10 space-y-8">
+        {user && <NotificationBanner userId={user.id} />}
 
-      {/* Prominent Match Alert */}
-      {acceptedWorkerPhone && (
-        <div className="bg-green-500/20 border border-green-500/50 p-6 rounded-2xl flex flex-col items-center justify-center text-center shadow-[0_0_30px_rgba(34,197,94,0.3)] animate-in slide-in-from-top-4">
-          <div className="w-16 h-16 bg-green-500/20 text-green-400 rounded-full flex items-center justify-center mb-4">
-            <Check size={32} />
-          </div>
-          <h2 className="text-2xl font-bold text-white mb-2">Worker Accepted!</h2>
-          <p className="text-gray-300 mb-4">You can now contact your worker directly.</p>
-          <div className="text-3xl font-mono text-neon-blue tracking-wider bg-black/40 px-6 py-3 rounded-xl border border-neon-blue/30">
-            {acceptedWorkerPhone}
-          </div>
-          <button 
-            onClick={() => setAcceptedWorkerPhone(null)}
-            className="mt-6 text-sm text-gray-400 hover:text-white underline"
-          >
-            Dismiss
-          </button>
-        </div>
-      )}
-
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-        {[
-          { title: t('active_jobs'), value: jobs.length.toString(), icon: Briefcase, color: 'text-neon-blue' },
-          { title: t('total_applicants'), value: jobs.reduce((acc, job) => acc + (job.applications?.length || 0), 0).toString(), icon: Users, color: 'text-neon-purple' },
-          { title: t('nearby_workers'), value: '45', icon: MapPin, color: 'text-green-400' },
-          { title: t('escrow_held'), value: '₹4,500', icon: Zap, color: 'text-yellow-400' },
-        ].map((stat, i) => (
-          <div key={i} className="glass-card p-5">
-            <div className="flex justify-between items-start">
-              <div>
-                <p className="text-gray-400 text-sm">{stat.title}</p>
-                <h3 className="text-3xl font-bold mt-2">{stat.value}</h3>
-              </div>
-              <div className={`p-3 bg-white/5 rounded-xl ${stat.color}`}>
-                <stat.icon size={24} />
-              </div>
+        <motion.div variants={fadeUp}>
+          <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
+            <div>
+              <h1 className="text-4xl md:text-5xl font-display font-extrabold tracking-tight text-text-primary leading-[1.1]">
+                {t('welcome_back')}
+                <span className="bg-clip-text text-transparent" style={{ backgroundImage: 'linear-gradient(135deg, #8B5CF6, #F2A93B)' }}>
+                  {user?.name || 'Contractor'}
+                </span>
+              </h1>
+              <p className="text-sm text-text-muted mt-2">{t('manage_workforce')}</p>
+            </div>
+            <div className="flex items-center gap-3">
+              <Link href="/tools">
+                <Button variant="secondary" className="px-4 py-2.5 text-xs hidden md:flex">
+                  🛠️ Rent Tools
+                </Button>
+              </Link>
+              <Link href="/employer/post">
+                <Button variant="primary" className="px-5 py-2.5 text-xs">
+                  <PlusCircle size={16} /> {t('post_new_request')}
+                </Button>
+              </Link>
             </div>
           </div>
-        ))}
-      </div>
+        </motion.div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-        <div className="lg:col-span-2 space-y-6">
-          <div className="flex justify-between items-center">
-            <h2 className="text-xl font-semibold flex items-center gap-2">
-              <Zap className="text-neon-purple" /> {t('live_hiring_queue')}
-            </h2>
-            <Link href="/employer/posted-jobs" className="text-sm text-neon-blue hover:underline">
-              {t('manage_all_jobs')}
-            </Link>
-          </div>
-
-          {loading ? (
-            <div className="text-center py-10 text-gray-500">{t('loading_jobs')}</div>
-          ) : jobs.length === 0 ? (
-            <div className="glass-card text-center py-10 text-gray-500">
-              {t('no_jobs_posted')} <Link href="/employer/post" className="text-neon-purple underline">{t('post_one_now')}</Link>.
+        {/* Accepted Worker Alert */}
+        {acceptedWorkerPhone && (
+          <motion.div variants={fadeUp} className="relative overflow-hidden rounded-2xl p-[1px]"
+            style={{ background: 'linear-gradient(135deg, #34D399 0%, #1C1B29 40%, #1C1B29 60%, #34D39980 100%)' }}>
+            <div className="rounded-2xl p-6 flex flex-col items-center justify-center text-center"
+              style={{ background: 'linear-gradient(135deg, rgba(52,211,153,0.08) 0%, #15141F 30%, #15141F 100%)' }}>
+              <div className="w-14 h-14 rounded-2xl flex items-center justify-center mb-4"
+                style={{ background: 'rgba(52,211,153,0.12)', border: '1px solid rgba(52,211,153,0.2)' }}>
+                <Check size={28} className="text-signal" />
+              </div>
+              <h2 className="text-2xl font-display font-bold text-text-primary mb-2">Worker Accepted!</h2>
+              <p className="text-text-muted mb-4">Contact your worker directly.</p>
+              <span className="text-3xl font-mono text-violet tracking-wider px-6 py-3 rounded-xl"
+                style={{ background: 'rgba(28,27,41,0.8)', border: '1px solid rgba(42,41,56,0.6)' }}>
+                {acceptedWorkerPhone}
+              </span>
+              <button onClick={() => setAcceptedWorkerPhone(null)} className="mt-4 text-sm text-text-muted hover:text-text-primary underline">
+                Dismiss
+              </button>
             </div>
-          ) : (
-            jobs.map((job, idx) => {
+          </motion.div>
+        )}
+
+        {/* Stat Cards */}
+        <motion.div variants={fadeUp} className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+          {stats.map((stat, i) => (
+            <motion.div key={i} whileHover={{ y: -3, scale: 1.01 }}
+              className="relative overflow-hidden rounded-2xl p-[1px]"
+              style={{ background: `linear-gradient(135deg, ${stat.color}30 0%, rgba(42,41,56,0.2) 100%)` }}>
+              <div className="rounded-2xl p-5 h-full relative"
+                style={{ background: 'linear-gradient(135deg, rgba(21,20,31,0.9), rgba(28,27,41,0.7))' }}>
+                <div className="absolute top-0 left-0 right-0 h-px"
+                  style={{ background: `linear-gradient(90deg, transparent, ${stat.color}30, transparent)` }} />
+                <div className="flex justify-between items-start">
+                  <div>
+                    <p className="text-text-muted text-xs font-mono uppercase tracking-wider">{stat.title}</p>
+                    <h3 className="text-3xl font-display font-extrabold mt-2 text-text-primary">{stat.value}</h3>
+                  </div>
+                  <div className="w-10 h-10 rounded-xl flex items-center justify-center"
+                    style={{ background: `${stat.color}12`, border: `1px solid ${stat.color}25` }}>
+                    <stat.icon size={20} style={{ color: stat.color }} />
+                  </div>
+                </div>
+              </div>
+            </motion.div>
+          ))}
+        </motion.div>
+
+        {/* Main Content Grid */}
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+          <motion.div variants={fadeUp} className="lg:col-span-2 space-y-6">
+            <div className="flex justify-between items-center">
+              <h2 className="text-xl font-display font-extrabold flex items-center gap-2.5 text-text-primary">
+                <Zap size={18} className="text-violet" /> {t('live_hiring_queue')}
+              </h2>
+              <Link href="/employer/posted-jobs" className="text-sm font-semibold text-violet hover:text-violet-dim transition-colors flex items-center gap-1">
+                {t('manage_all_jobs')} →
+              </Link>
+            </div>
+
+            {loading ? (
+              <div className="text-center py-10 text-text-muted font-mono text-sm animate-pulse">Loading jobs...</div>
+            ) : jobs.length === 0 ? (
+              <div className="glass-card text-center py-10 text-text-muted">
+                {t('no_jobs_posted')} <Link href="/employer/post" className="text-violet underline">{t('post_one_now')}</Link>.
+              </div>
+            ) : jobs.map((job, idx) => {
               const applications = job.applications || [];
               const accepted = applications.filter((a: any) => a.status === 'ACCEPTED').length;
               const pendingApps = applications.filter((a: any) => a.status === 'PENDING' || a.status === 'QUEUED');
-              
+
               return (
-                <motion.div 
-                  key={job.id}
-                  initial={{ opacity: 0, x: -20 }}
-                  animate={{ opacity: 1, x: 0 }}
-                  transition={{ delay: idx * 0.1 }}
-                  className="glass-card relative overflow-hidden"
-                >
+                <motion.div key={job.id} initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }}
+                  transition={{ delay: idx * 0.08 }} className="glass-card relative overflow-hidden">
                   <div className="flex justify-between items-start mb-4">
                     <div>
-                      <h3 className="font-semibold text-lg">{job.title}</h3>
-                      <p className="text-gray-400 text-sm flex items-center gap-1 mt-1">
-                        <MapPin size={14} /> ₹{job.wage} • {job.category}
+                      <h3 className="font-display font-bold text-lg text-text-primary">{job.title}</h3>
+                      <p className="text-text-muted text-sm flex items-center gap-2 mt-1 font-mono">
+                        <MapPin size={13} /> ₹{job.wage} • {job.category}
                       </p>
                     </div>
                   </div>
-                  
-                  <div className="bg-black/30 rounded-xl p-4">
+                  <div className="rounded-xl p-4" style={{ background: 'rgba(11,11,20,0.4)', border: '1px solid rgba(42,41,56,0.3)' }}>
                     <div className="flex justify-between text-sm mb-2">
-                      <span className="text-gray-300">{t('slots_filled')}</span>
-                      <span className="font-mono text-neon-blue">{accepted} / {job.slots_required}</span>
+                      <span className="text-text-muted font-sans">{t('slots_filled')}</span>
+                      <span className="font-mono text-violet font-bold">{accepted} / {job.slots_required}</span>
                     </div>
-                    {/* Progress bar */}
-                    <div className="h-2 w-full bg-white/10 rounded-full overflow-hidden mb-4">
-                      <div className="h-full bg-neon-blue transition-all duration-500" style={{ width: `${Math.min((accepted/job.slots_required)*100, 100)}%` }}></div>
+                    <div className="h-2.5 w-full rounded-full overflow-hidden" style={{ background: 'rgba(42,41,56,0.4)', border: '1px solid rgba(42,41,56,0.3)' }}>
+                      <div className="h-full rounded-full transition-all duration-500"
+                        style={{ width: `${Math.min((accepted / job.slots_required) * 100, 100)}%`, background: 'linear-gradient(90deg, #8B5CF6, #a78bfa)', boxShadow: '0 0 10px rgba(139,92,246,0.3)' }} />
                     </div>
-                    
-                    {/* Applications Queue */}
+
                     {pendingApps.length > 0 && (
-                      <div className="space-y-3 mt-6 border-t border-white/10 pt-4">
-                        <h4 className="text-sm font-semibold text-gray-400">{t('waiting_in_queue')}</h4>
+                      <div className="space-y-2.5 mt-5 pt-4" style={{ borderTop: '1px solid rgba(42,41,56,0.3)' }}>
+                        <h4 className="text-xs font-semibold text-text-muted uppercase tracking-wider">{t('waiting_in_queue')}</h4>
                         {pendingApps.map((app: any, i: number) => (
-                          <div key={i} className="flex justify-between items-center bg-white/5 p-3 rounded-xl border border-white/10">
+                          <div key={i} className="flex justify-between items-center p-3 rounded-xl"
+                            style={{ background: 'rgba(42,41,56,0.2)', border: '1px solid rgba(42,41,56,0.3)' }}>
                             <div className="flex items-center gap-3">
-                              <div className="w-10 h-10 rounded-full bg-gray-800 overflow-hidden shrink-0">
-                                {app.photo_url ? (
-                                  <img src={app.photo_url} alt={app.name} className="w-full h-full object-cover" />
-                                ) : (
-                                  <div className="w-full h-full flex items-center justify-center"><User size={20} /></div>
-                                )}
+                              <div className="w-10 h-10 rounded-xl overflow-hidden flex items-center justify-center"
+                                style={{ background: 'rgba(42,41,56,0.5)' }}>
+                                {app.photo_url ? <img src={app.photo_url} alt={app.name} className="w-full h-full object-cover" /> : <User size={18} className="text-text-muted" />}
                               </div>
                               <div>
-                                <h5 className="font-semibold text-sm">{app.name}</h5>
-                                <div className="text-xs text-green-400 flex items-center gap-1 mt-1">
-                                  <ShieldCheck size={12} /> {t('trust_score')}: {app.trust_score}
-                                </div>
+                                <h5 className="font-semibold text-sm text-text-primary">{app.name}</h5>
+                                <span className="text-[10px] flex items-center gap-1 mt-0.5" style={{ color: '#34D399' }}>
+                                  <ShieldCheck size={10} /> Trust: {app.trust_score}
+                                </span>
                               </div>
                             </div>
                             <div className="flex gap-2">
-                              <button 
-                                onClick={() => handleAccept(job.id, app.worker_id)}
-                                disabled={accepted >= job.slots_required}
-                                className={`px-4 py-1.5 rounded-lg text-sm font-medium transition-colors ${accepted >= job.slots_required ? 'bg-gray-800 text-gray-500 cursor-not-allowed' : 'bg-neon-purple/20 text-neon-purple hover:bg-neon-purple hover:text-white'}`}
-                              >
-                                {t('accept')}
-                              </button>
-                              <button 
-                                onClick={() => handleReject(job.id, app.worker_id)}
-                                className="px-4 py-1.5 rounded-lg text-sm font-medium transition-colors bg-red-500/20 text-red-400 hover:bg-red-500 hover:text-white"
-                              >
+                              <Button onClick={() => handleAccept(job.id, app.worker_id)} disabled={accepted >= job.slots_required}
+                                variant="primary" className="px-3 py-1.5 text-xs">{t('accept')}</Button>
+                              <button onClick={() => handleReject(job.id, app.worker_id)}
+                                className="px-3 py-1.5 rounded-xl text-xs font-medium transition-all"
+                                style={{ background: 'rgba(239,68,68,0.08)', border: '1px solid rgba(239,68,68,0.2)', color: '#f87171' }}>
                                 {t('reject')}
                               </button>
                             </div>
@@ -227,45 +223,46 @@ export default function EmployerDashboard() {
                   </div>
                 </motion.div>
               );
-            })
-          )}
-        </div>
+            })}
+          </motion.div>
 
-        <div className="space-y-6">
-          <div className="glass-card bg-red-900/10 border-red-500/30">
-            <h3 className="text-red-400 font-semibold mb-3 flex items-center gap-2">
-              <Zap size={18} /> {t('emergency_broadcast')}
-            </h3>
-            <p className="text-sm text-gray-400 mb-4">{t('emergency_desc')}</p>
-            <button 
-              onClick={() => alert("Emergency mode activated! Notifying nearby workers...")}
-              className="w-full bg-red-500/20 text-red-300 border border-red-500/50 py-3 rounded-xl font-medium hover:bg-red-500/40 transition-colors"
-            >
-              {t('activate_mode')}
-            </button>
-          </div>
-
-          <div className="glass-card">
-            <h3 className="font-semibold mb-4">{t('nearby_availability')}</h3>
-            <div className="relative h-48 bg-black/40 rounded-xl border border-white/5 flex items-center justify-center overflow-hidden">
-              <div className="absolute w-32 h-32 border border-neon-purple/30 rounded-full animate-ping opacity-20"></div>
-              <div className="text-center">
-                <MapPin size={32} className="text-neon-purple mx-auto mb-2" />
-                <span className="text-2xl font-bold text-white">45</span>
-                <p className="text-xs text-gray-400">{t('workers_in_5km')}</p>
-              </div>
+          {/* Sidebar */}
+          <motion.div variants={fadeUp} className="space-y-6">
+            <div className="glass-card" style={{ borderColor: 'rgba(239,68,68,0.15)' }}>
+              <h3 className="font-display font-semibold mb-3 flex items-center gap-2" style={{ color: '#f87171' }}>
+                <Zap size={16} /> {t('emergency_broadcast')}
+              </h3>
+              <p className="text-sm text-text-muted mb-4">{t('emergency_desc')}</p>
+              <button onClick={() => alert("Emergency mode activated!")}
+                className="w-full py-3 rounded-xl font-medium text-sm transition-all hover:scale-[1.02]"
+                style={{ background: 'rgba(239,68,68,0.06)', border: '1px solid rgba(239,68,68,0.2)', color: '#f87171' }}>
+                {t('activate_mode')}
+              </button>
             </div>
-            <Link href="/employer/workers" className="btn-neon w-full mt-4 flex items-center justify-center text-sm py-2">
-              {t('view_radar_map')}
-            </Link>
-          </div>
+
+            <div className="glass-card">
+              <h3 className="font-display font-semibold mb-4 text-text-primary">{t('nearby_availability')}</h3>
+              <div className="relative h-48 rounded-xl flex items-center justify-center overflow-hidden"
+                style={{ background: 'rgba(11,11,20,0.4)', border: '1px solid rgba(42,41,56,0.3)' }}>
+                <div className="absolute w-32 h-32 rounded-full animate-ping opacity-10" style={{ border: '1px solid #8B5CF6' }} />
+                <div className="text-center">
+                  <MapPin size={28} className="text-violet mx-auto mb-2" style={{ filter: 'drop-shadow(0 0 6px rgba(139,92,246,0.4))' }} />
+                  <span className="text-3xl font-display font-extrabold text-text-primary">45</span>
+                  <p className="text-xs text-text-muted mt-1">{t('workers_in_5km')}</p>
+                </div>
+              </div>
+              <Link href="/employer/workers">
+                <Button variant="primary" className="w-full mt-4 text-sm py-2.5">{t('view_radar_map')}</Button>
+              </Link>
+            </div>
+          </motion.div>
         </div>
-      </div>
-      
-      {/* Mobile Fab */}
-      <Link href="/employer/post" className="md:hidden fixed bottom-20 right-4 w-14 h-14 bg-neon-purple rounded-full flex items-center justify-center shadow-[0_0_20px_rgba(176,38,255,0.6)] z-50">
-        <PlusCircle size={24} className="text-white" />
-      </Link>
+
+        <Link href="/employer/post" className="md:hidden fixed bottom-20 right-4 w-14 h-14 rounded-full flex items-center justify-center z-50"
+          style={{ background: 'linear-gradient(135deg, #8B5CF6, #6D4FC4)', boxShadow: '0 4px 20px rgba(139,92,246,0.4)' }}>
+          <PlusCircle size={24} className="text-white" />
+        </Link>
+      </motion.div>
     </div>
   );
 }

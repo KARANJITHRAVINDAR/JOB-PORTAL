@@ -1,13 +1,60 @@
 'use client';
 
 import { motion } from 'framer-motion';
-import { MapPin, Briefcase, Zap, Search, Mic, Map, ShieldCheck, CheckCircle, Clock, X } from 'lucide-react';
+import { MapPin, Briefcase, Zap, Search, Mic, Map, ShieldCheck, CheckCircle, Clock, X, Sparkles } from 'lucide-react';
 import Link from 'next/link';
 import { useState, useEffect } from 'react';
 import NotificationBanner from '@/components/NotificationBanner';
 import { useLanguage } from '@/context/LanguageContext';
 import VoiceAssistant from '@/components/VoiceAssistant';
 import QRScanner from '@/components/QRScanner';
+
+import Button from '@/components/Button';
+import SignalPing from '@/components/SignalPing';
+import JobCard from '@/components/JobCard';
+import TrustCard from '@/components/TrustCard';
+import EmptyState from '@/components/EmptyState';
+
+// Floating background orbs for dynamic aesthetic
+function FloatingOrbs() {
+  return (
+    <div className="fixed inset-0 pointer-events-none overflow-hidden z-0">
+      <div
+        className="absolute w-[500px] h-[500px] rounded-full animate-float"
+        style={{
+          top: '-10%', right: '-5%',
+          background: 'radial-gradient(circle, rgba(139,92,246,0.08) 0%, transparent 70%)',
+          filter: 'blur(40px)',
+        }}
+      />
+      <div
+        className="absolute w-[400px] h-[400px] rounded-full animate-float-delayed"
+        style={{
+          bottom: '10%', left: '-10%',
+          background: 'radial-gradient(circle, rgba(52,211,153,0.06) 0%, transparent 70%)',
+          filter: 'blur(50px)',
+        }}
+      />
+      <div
+        className="absolute w-[300px] h-[300px] rounded-full animate-glow-pulse"
+        style={{
+          top: '40%', right: '20%',
+          background: 'radial-gradient(circle, rgba(242,169,59,0.04) 0%, transparent 70%)',
+        }}
+      />
+    </div>
+  );
+}
+
+const staggerContainer = {
+  hidden: {},
+  show: { transition: { staggerChildren: 0.08 } },
+};
+
+const fadeUp = {
+  hidden: { opacity: 0, y: 20 },
+  show: { opacity: 1, y: 0, transition: { duration: 0.5, ease: [0.4, 0, 0.2, 1] } },
+};
 
 export default function SeekerDashboard() {
   const { t } = useLanguage();
@@ -91,8 +138,7 @@ export default function SeekerDashboard() {
       const data = await res.json();
       if (res.ok) {
         alert('Applied successfully! Status: ' + data.status);
-        // Remove from feed
-        setJobs(jobs.filter(j => j.id !== jobId));
+        fetchJobs(user);
         fetchApplications(user.id);
       } else {
         alert(data.error || 'Failed to apply');
@@ -125,189 +171,261 @@ export default function SeekerDashboard() {
     }
   };
 
-  const urgentJob = jobs.length > 0 ? jobs[0] : null;
-  const regularJobs = jobs.slice(1);
-
   return (
-    <div className="space-y-8 animate-in fade-in duration-500 pb-20">
-      {user && <NotificationBanner userId={user.id} />}
-      <header className="flex flex-col gap-4">
-        <div className="flex justify-between items-center">
-          <div>
-            <h1 className="text-2xl font-bold">{t('welcome_back')}{user?.name || 'Worker'}</h1>
-            <p className="text-sm text-gray-400 mt-1 flex items-center gap-1">
-              <ShieldCheck size={14} className="text-green-400" /> {t('trust_score')}: {user?.trust_score || 100}/100
-            </p>
+    <div className="relative min-h-screen pb-20">
+      <FloatingOrbs />
+
+      <motion.div
+        variants={staggerContainer}
+        initial="hidden"
+        animate="show"
+        className="relative z-10 space-y-8"
+      >
+        {user && <NotificationBanner userId={user.id} />}
+
+        {/* Hero Header */}
+        <motion.header variants={fadeUp} className="flex flex-col gap-6">
+          <div className="flex flex-col sm:flex-row sm:justify-between sm:items-start gap-4">
+            <div>
+              <motion.h1
+                className="text-4xl md:text-5xl font-display font-extrabold tracking-tight text-text-primary leading-[1.1]"
+                initial={{ opacity: 0, x: -30 }}
+                animate={{ opacity: 1, x: 0 }}
+                transition={{ duration: 0.6, ease: [0.4, 0, 0.2, 1] }}
+              >
+                {t('welcome_back')}
+                <span className="bg-clip-text text-transparent" style={{ backgroundImage: 'linear-gradient(135deg, #8B5CF6, #34D399)' }}>
+                  {user?.name || 'Worker'}
+                </span>
+              </motion.h1>
+              <p className="text-sm text-text-muted mt-2 font-sans max-w-md">
+                Check your active signals and nearby gig options.
+              </p>
+            </div>
+
+            <motion.div whileHover={{ scale: 1.03 }} whileTap={{ scale: 0.97 }}>
+              <Button
+                variant={available ? 'signal' : 'secondary'}
+                onClick={() => setAvailable(!available)}
+                className="self-start sm:self-auto py-2.5 px-5 font-semibold text-xs border transition-all duration-300"
+              >
+                <SignalPing color={available ? 'signal' : 'muted'} size="sm" />
+                {available ? 'Available Now' : 'Busy'}
+              </Button>
+            </motion.div>
           </div>
+        </motion.header>
 
-          <button
-            onClick={() => setAvailable(!available)}
-            className={`px-4 py-2 rounded-full border text-sm font-medium transition-all duration-300 flex items-center gap-2 ${available ? 'bg-green-500/20 border-green-500 text-green-400 shadow-[0_0_15px_rgba(34,197,94,0.3)]' : 'bg-gray-800 border-gray-600 text-gray-400'
-              }`}
-          >
-            <span className={`w-2 h-2 rounded-full ${available ? 'bg-green-400 animate-pulse' : 'bg-gray-500'}`}></span>
-            {available ? 'Available Now' : 'Busy'}
-          </button>
-        </div>
+        {/* Trust Score Card */}
+        <motion.div variants={fadeUp}>
+          {user && <TrustCard user={user} />}
+        </motion.div>
 
-        {/* AI Voice Search Bar */}
-        <div className="relative">
+        {/* Search Bar */}
+        <motion.div variants={fadeUp} className="relative group">
+          <div className="absolute -inset-0.5 rounded-2xl opacity-0 group-focus-within:opacity-100 transition-opacity duration-500 pointer-events-none"
+            style={{ background: 'linear-gradient(135deg, rgba(139,92,246,0.15), rgba(52,211,153,0.1))' }} />
           <input
             type="text"
             placeholder="What kind of work are you looking for?"
-            className="w-full bg-white/5 border border-white/10 rounded-2xl py-4 pl-12 pr-16 text-white focus:outline-none focus:border-neon-purple focus:ring-1 focus:ring-neon-purple transition-all shadow-[0_0_15px_rgba(0,0,0,0.5)]"
+            className="relative w-full bg-bg-surface border border-line rounded-2xl py-4 pl-12 pr-16 text-text-primary placeholder:text-text-muted/60 focus:outline-none focus:border-violet/40 transition-all duration-400 font-sans"
+            style={{ boxShadow: '0 4px 24px rgba(0,0,0,0.2), inset 0 1px 0 rgba(255,255,255,0.03)' }}
           />
-          <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400" size={20} />
-
-          <VoiceAssistant 
+          <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-text-muted transition-colors group-focus-within:text-violet" size={20} />
+          <VoiceAssistant
             onIntentParsed={(category) => {
-              // Update user preference and refresh jobs
               const updatedUser = { ...user, category_sought: category };
               setUser(updatedUser);
               fetchJobs(updatedUser);
-              
-              // Optionally update DB
               fetch('http://localhost:4000/api/auth/profile', {
                 method: 'PUT',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ id: user.id, category_sought: category })
               }).catch(e => console.error(e));
-            }} 
+            }}
           />
-        </div>
+        </motion.div>
 
         {/* Quick Links */}
-        <div className="flex flex-wrap gap-4">
-          <Link href="/seeker/my-jobs" className="bg-white/10 hover:bg-white/20 px-6 py-3 rounded-xl flex items-center gap-2 font-medium transition-colors">
-            <Briefcase size={18} className="text-neon-purple" /> {t('my_jobs')}
-          </Link>
-          <Link href="/seeker/profile" className="bg-white/10 hover:bg-white/20 px-6 py-3 rounded-xl flex items-center gap-2 font-medium transition-colors">
-            <ShieldCheck size={18} className="text-green-400" /> {t('nav_my_profile')}
-          </Link>
-          <Link href="/tools" className="bg-white/10 hover:bg-white/20 px-6 py-3 rounded-xl flex items-center gap-2 font-medium transition-colors">
-            <span className="text-neon-blue">🛠️</span> Rent Tools
-          </Link>
-        </div>
-      </header>
-
-      {/* Accepted Applications Prompts */}
-      {applications.filter(a => a.status === 'ACCEPTED').map(app => (
-        <div key={app.application_id} className="bg-green-500/20 border border-green-500/50 p-6 rounded-2xl flex flex-col md:flex-row items-center justify-between text-left shadow-[0_0_30px_rgba(34,197,94,0.3)] animate-in slide-in-from-top-4">
-          <div className="flex items-center gap-4 mb-4 md:mb-0">
-            <div className="w-16 h-16 bg-green-500/20 text-green-400 rounded-full flex items-center justify-center shrink-0">
-              <CheckCircle size={32} />
-            </div>
-            <div>
-              <h2 className="text-xl font-bold text-white mb-1">You got the job!</h2>
-              <p className="text-gray-300 text-sm">Employer: <span className="text-white font-medium">{app.employer_name}</span> ({app.title})</p>
-            </div>
-          </div>
-
-          <div className="flex flex-col items-center md:items-end">
-            <p className="text-xs text-green-400 font-bold mb-2 uppercase tracking-widest bg-green-500/10 px-3 py-1 rounded-full border border-green-500/20">
-              Travel Advance Sent via UPI
-            </p>
-            <p className="text-xs text-gray-400 mb-1 uppercase tracking-widest">Contact Employer Now</p>
-            <div className="text-2xl font-mono text-neon-blue tracking-wider bg-black/40 px-6 py-2 rounded-xl border border-neon-blue/30 mb-2">
-              {app.employer_phone}
-            </div>
-            {app.status === 'ACCEPTED' ? (
-              <button 
-                onClick={() => setScanningJobId(app.job_id)}
-                className="text-xs px-4 py-2 bg-neon-purple text-white rounded-lg hover:bg-neon-purple/80 transition-colors flex items-center gap-1"
+        <motion.div variants={fadeUp} className="flex flex-wrap gap-3">
+          {[
+            { href: '/seeker/my-jobs', icon: Briefcase, label: t('my_jobs'), color: '#8B5CF6' },
+            { href: '/seeker/profile', icon: ShieldCheck, label: t('nav_my_profile'), color: '#34D399' },
+            { href: '/tools', icon: Sparkles, label: 'Rent Tools', color: '#F2A93B' },
+          ].map((item) => (
+            <Link key={item.href} href={item.href}>
+              <motion.div
+                whileHover={{ scale: 1.04, y: -2 }}
+                whileTap={{ scale: 0.97 }}
+                className="flex items-center gap-2.5 px-5 py-2.5 rounded-xl text-xs font-semibold text-text-primary cursor-pointer transition-all duration-300"
+                style={{
+                  background: `linear-gradient(135deg, ${item.color}12, ${item.color}06)`,
+                  border: `1px solid ${item.color}25`,
+                }}
               >
-                Scan QR to Clock In
-              </button>
-            ) : app.status === 'IN_PROGRESS' ? (
-              <span className="text-xs px-4 py-2 bg-neon-blue/20 text-neon-blue border border-neon-blue/30 rounded-lg">CLOCKED IN</span>
-            ) : null}
-          </div>
-        </div>
-      ))}
+                <item.icon size={16} style={{ color: item.color }} />
+                {item.label}
+              </motion.div>
+            </Link>
+          ))}
+        </motion.div>
 
-      {/* Status Tracker for Pending */}
-      {applications.filter(a => a.status === 'PENDING' || a.status === 'QUEUED').length > 0 && (
-        <div className="glass-card space-y-4">
-          <h3 className="font-semibold mb-2">Pending Applications</h3>
-          {applications.filter(a => a.status === 'PENDING' || a.status === 'QUEUED').map(app => (
-            <div key={app.application_id} className="flex gap-4 items-center bg-white/5 p-3 rounded-xl border border-white/10">
-              <div className="w-10 h-10 rounded-full bg-yellow-500/20 border border-yellow-500 flex items-center justify-center">
-                <Clock className="text-yellow-400" size={20} />
+        {/* Accepted Applications */}
+        {applications.filter(a => a.status === 'ACCEPTED' || a.status === 'IN_PROGRESS').map(app => (
+          <motion.div
+            key={app.application_id}
+            variants={fadeUp}
+            className="relative overflow-hidden rounded-2xl p-[1px]"
+            style={{ background: 'linear-gradient(135deg, #34D399 0%, #1C1B29 40%, #1C1B29 60%, #8B5CF680 100%)' }}
+          >
+            <div className="rounded-2xl p-6 flex flex-col md:flex-row items-center justify-between"
+              style={{ background: 'linear-gradient(135deg, rgba(52,211,153,0.08) 0%, #15141F 30%, #15141F 100%)' }}>
+              <div className="flex items-center gap-4 mb-4 md:mb-0">
+                <div className="w-14 h-14 rounded-2xl flex items-center justify-center shrink-0"
+                  style={{ background: 'linear-gradient(135deg, rgba(52,211,153,0.15), rgba(52,211,153,0.05))', border: '1px solid rgba(52,211,153,0.2)' }}>
+                  <CheckCircle size={28} className="text-signal" />
+                </div>
+                <div>
+                  <h2 className="text-xl font-display font-extrabold text-text-primary mb-1">
+                    {app.status === 'IN_PROGRESS' ? 'Job in Progress!' : 'You got the job!'}
+                  </h2>
+                  <p className="text-text-muted text-sm font-sans">
+                    Employer: <span className="text-text-primary font-semibold">{app.employer_name}</span> ({app.title})
+                  </p>
+                </div>
               </div>
-              <div>
-                <h4 className="font-medium text-sm">{app.title}</h4>
-                <p className="text-xs text-gray-400">Status: {app.status}. Waiting for employer to accept.</p>
+              <div className="flex flex-col items-center md:items-end gap-2">
+                <span className="text-xs text-signal font-mono font-bold uppercase tracking-widest px-3 py-1 rounded-full"
+                  style={{ background: 'rgba(52,211,153,0.08)', border: '1px solid rgba(52,211,153,0.2)' }}>
+                  {app.status === 'IN_PROGRESS' ? 'Currently Clocked In' : 'Travel Advance Sent via UPI'}
+                </span>
+                <span className="text-[10px] text-text-muted uppercase tracking-widest font-sans">Contact Employer</span>
+                <span className="text-xl font-mono text-violet tracking-wider px-5 py-2 rounded-xl"
+                  style={{ background: 'rgba(28,27,41,0.8)', border: '1px solid rgba(42,41,56,0.6)' }}>
+                  {app.employer_phone}
+                </span>
+                {app.status === 'ACCEPTED' && (
+                  <Button onClick={() => setScanningJobId(app.job_id)} variant="primary" className="text-xs py-2 px-4 mt-1">
+                    Scan QR to Clock In
+                  </Button>
+                )}
               </div>
             </div>
-          ))}
-        </div>
-      )}
+          </motion.div>
+        ))}
 
-
-
-      {/* Regular Jobs Feed */}
-      <div>
-        <div className="flex justify-between items-center mb-4">
-          <h2 className="text-xl font-semibold flex items-center gap-2">
-            <Map className="text-neon-blue" /> {t('find_nearby_jobs')}
-          </h2>
-          <Link href="/seeker/jobs" className="text-sm text-neon-blue hover:text-white transition-colors">
-            {t('view_radar_map')}
-          </Link>
-        </div>
-
-        <div className="space-y-4">
-          {loading ? (
-            <div className="text-center text-gray-400 py-4">Searching for jobs...</div>
-          ) : regularJobs.length === 0 ? (
-            <div className="text-center text-gray-400 py-4">No regular jobs found matching your category.</div>
-          ) : (
-            regularJobs.map((job, idx) => (
-              <div key={job.id} className="glass-card hover:-translate-y-1 hover:border-white/30 cursor-pointer flex flex-col gap-3">
-                <div className="flex justify-between items-start">
-                  <div>
-                    <h3 className="font-medium text-lg">{job.title}</h3>
-                    <div className="flex gap-3 text-sm text-gray-400 mt-2">
-                      <span className="flex items-center gap-1"><MapPin size={14} /> {(job.distance / 1000).toFixed(1)} km</span>
-                      <span className="flex items-center gap-1 text-green-400"><Briefcase size={14} /> ₹{job.wage}</span>
-                    </div>
+        {/* Pending Applications */}
+        {applications.filter(a => a.status === 'PENDING' || a.status === 'QUEUED').length > 0 && (
+          <motion.div variants={fadeUp} className="glass-card space-y-4">
+            <h3 className="font-display font-bold text-lg text-text-primary flex items-center gap-2">
+              <Clock size={18} className="text-marigold" />
+              Pending Applications
+            </h3>
+            <div className="grid gap-3">
+              {applications.filter(a => a.status === 'PENDING' || a.status === 'QUEUED').map(app => (
+                <div key={app.application_id} className="flex gap-4 items-center p-4 rounded-xl transition-all duration-300 hover:bg-bg-surface-raised/60"
+                  style={{ background: 'rgba(28,27,41,0.4)', border: '1px solid rgba(42,41,56,0.4)' }}>
+                  <div className="w-10 h-10 rounded-xl flex items-center justify-center shrink-0"
+                    style={{ background: 'rgba(242,169,59,0.08)', border: '1px solid rgba(242,169,59,0.2)' }}>
+                    <Clock className="text-marigold" size={18} />
                   </div>
-                  <span className="px-3 py-1 rounded-full bg-white/5 border border-white/10 text-xs text-gray-300">
-                    {job.category}
-                  </span>
+                  <div className="flex-1 min-w-0">
+                    <h4 className="font-semibold text-sm text-text-primary truncate font-sans">{app.title}</h4>
+                    <p className="text-xs text-text-muted mt-0.5 font-sans">
+                      Status: <span className="font-mono text-marigold text-[10px] px-1.5 py-0.5 rounded"
+                        style={{ background: 'rgba(242,169,59,0.08)' }}>{app.status}</span> — Waiting for employer response.
+                    </p>
+                  </div>
                 </div>
-                <button
-                  onClick={() => handleApply(job.id)}
-                  className="bg-neon-purple/20 text-neon-purple hover:bg-neon-purple hover:text-white px-4 py-2 rounded-xl transition-colors font-medium text-sm w-max"
-                >
-                  Apply Now
-                </button>
-              </div>
-            ))
-          )}
-        </div>
-      </div>
+              ))}
+            </div>
+          </motion.div>
+        )}
 
-      {/* QR Scanner Modal */}
-      {scanningJobId && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm">
-          <div className="glass-card w-full max-w-md p-6 relative">
-            <button 
-              onClick={() => setScanningJobId(null)}
-              className="absolute top-4 right-4 text-gray-400 hover:text-white"
-            >
-              <X size={24} />
-            </button>
-            <h3 className="text-xl font-bold mb-4">Scan Employer's QR Code</h3>
-            <p className="text-sm text-gray-400 mb-4">
-              Point your camera at the employer's device to clock in securely.
-            </p>
-            <QRScanner 
-              onScanSuccess={handleClockIn}
-            />
+        {/* Jobs Feed */}
+        <motion.div variants={fadeUp} className="space-y-5">
+          <div className="flex justify-between items-center">
+            <h2 className="text-xl font-display font-extrabold flex items-center gap-2.5 text-text-primary">
+              <div className="w-8 h-8 rounded-lg flex items-center justify-center"
+                style={{ background: 'linear-gradient(135deg, rgba(139,92,246,0.15), rgba(139,92,246,0.05))', border: '1px solid rgba(139,92,246,0.2)' }}>
+                <Map size={16} className="text-violet" />
+              </div>
+              {t('find_nearby_jobs')}
+            </h2>
+            <Link href="/seeker/jobs" className="text-sm font-semibold text-violet hover:text-violet-dim transition-colors font-sans flex items-center gap-1">
+              {t('view_radar_map')}
+              <span className="text-lg">→</span>
+            </Link>
           </div>
-        </div>
-      )}
+
+          {loading ? (
+            <div className="flex flex-col items-center justify-center py-20 gap-4 text-text-muted">
+              <SignalPing color="violet" size="md" />
+              <span className="font-mono text-sm tracking-wider animate-pulse">Searching active signals...</span>
+            </div>
+          ) : jobs.length === 0 ? (
+            <EmptyState
+              title="No active signals found"
+              description="No regular jobs found matching your category. Try widening your search radius or enable alerts to be notified."
+              onWidenRadius={() => alert('Radar radius widened to 25km!')}
+              onEnableAlerts={() => alert('Alerts enabled for ' + (user?.category_sought || 'any job') + '!')}
+            />
+          ) : (
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              {jobs.map((job, idx) => (
+                <motion.div
+                  key={job.id}
+                  initial={{ opacity: 0, y: 20 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ duration: 0.4, delay: idx * 0.06 }}
+                >
+                  <JobCard
+                    job={job}
+                    isUrgent={idx === 0}
+                    onApply={handleApply}
+                    isApplied={applications.some(a => a.job_id === job.id)}
+                  />
+                </motion.div>
+              ))}
+            </div>
+          )}
+        </motion.div>
+
+        {/* QR Scanner Modal */}
+        {scanningJobId && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            className="fixed inset-0 z-50 flex items-center justify-center p-4"
+            style={{ background: 'rgba(11,11,20,0.85)', backdropFilter: 'blur(12px)' }}
+          >
+            <motion.div
+              initial={{ scale: 0.9, opacity: 0 }}
+              animate={{ scale: 1, opacity: 1 }}
+              className="w-full max-w-md p-6 relative rounded-2xl overflow-hidden"
+              style={{
+                background: 'linear-gradient(135deg, rgba(21,20,31,0.95), rgba(28,27,41,0.9))',
+                border: '1px solid rgba(42,41,56,0.6)',
+                boxShadow: '0 25px 60px rgba(0,0,0,0.5), 0 0 0 1px rgba(139,92,246,0.05)',
+              }}
+            >
+              <button
+                onClick={() => setScanningJobId(null)}
+                className="absolute top-4 right-4 text-text-muted hover:text-text-primary transition-colors p-1 rounded-lg hover:bg-bg-surface-raised"
+              >
+                <X size={20} />
+              </button>
+              <h3 className="text-xl font-display font-bold mb-2 text-text-primary">Scan Employer's QR Code</h3>
+              <p className="text-sm text-text-muted mb-4 font-sans">
+                Point your camera at the employer's device to clock in securely.
+              </p>
+              <div className="rounded-xl overflow-hidden" style={{ border: '1px solid rgba(42,41,56,0.6)' }}>
+                <QRScanner onScanSuccess={handleClockIn} />
+              </div>
+            </motion.div>
+          </motion.div>
+        )}
+      </motion.div>
     </div>
   );
 }

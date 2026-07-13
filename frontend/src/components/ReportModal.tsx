@@ -55,47 +55,52 @@ export default function ReportModal({ isOpen, onClose, reporterId, reportedId, j
             initial={{ opacity: 0, scale: 0.95 }}
             animate={{ opacity: 1, scale: 1 }}
             exit={{ opacity: 0, scale: 0.95 }}
-            className="glass-card w-full max-w-md relative bg-gray-900 border-red-500/20"
+            className="w-full max-w-md relative rounded-2xl p-[1px]"
+            style={{ background: 'linear-gradient(135deg, rgba(239,68,68,0.2) 0%, rgba(42,41,56,0.2) 100%)' }}
           >
-            <button onClick={onClose} className="absolute top-4 right-4 text-gray-400 hover:text-white">
-              <X size={20} />
-            </button>
-            
-            <div className="flex items-center gap-3 mb-6 text-red-400">
-              <AlertTriangle size={24} />
-              <h2 className="text-xl font-bold">Report {targetType === 'worker' ? 'Worker' : 'Employer'}</h2>
-            </div>
-            
-            <p className="text-gray-300 text-sm mb-4">
-              Please describe the issue you faced with this {targetType}. This helps us maintain a safe community.
-            </p>
-            
-            <form onSubmit={handleSubmit} className="space-y-4">
-              <textarea
-                value={reason}
-                onChange={(e) => setReason(e.target.value)}
-                placeholder="What went wrong?"
-                className="w-full h-32 bg-black/40 border border-white/10 rounded-xl p-3 text-white focus:outline-none focus:border-red-500 resize-none"
-                required
-              />
+            <div className="rounded-2xl p-6" style={{ background: 'linear-gradient(135deg, rgba(21,20,31,0.95), rgba(28,27,41,0.9))' }}>
+              <button onClick={onClose} className="absolute top-4 right-4 text-text-muted hover:text-text-primary transition-colors">
+                <X size={20} />
+              </button>
               
-              <div className="flex justify-end gap-3 pt-2">
-                <button 
-                  type="button" 
-                  onClick={onClose}
-                  className="px-4 py-2 rounded-xl text-gray-400 hover:bg-white/5 transition-colors text-sm font-medium"
-                >
-                  Cancel
-                </button>
-                <button 
-                  type="submit" 
-                  disabled={submitting}
-                  className="px-4 py-2 bg-red-500/20 text-red-400 hover:bg-red-500 hover:text-white border border-red-500/30 rounded-xl transition-colors text-sm font-medium"
-                >
-                  {submitting ? 'Submitting...' : 'Submit Report'}
-                </button>
+              <div className="flex items-center gap-3 mb-6 text-red-400">
+                <AlertTriangle size={24} />
+                <h2 className="text-xl font-display font-bold text-text-primary">Report {targetType === 'worker' ? 'Worker' : 'Employer'}</h2>
               </div>
-            </form>
+              
+              <p className="text-text-muted text-sm mb-4">
+                Please describe the issue you faced with this {targetType}. This helps us maintain a safe community.
+              </p>
+              
+              <form onSubmit={handleSubmit} className="space-y-4">
+                <textarea
+                  value={reason}
+                  onChange={(e) => setReason(e.target.value)}
+                  placeholder="What went wrong?"
+                  className="w-full h-32 rounded-xl p-3 text-text-primary focus:outline-none resize-none text-sm placeholder:text-text-muted/50"
+                  style={{ background: 'rgba(11,11,20,0.6)', border: '1px solid rgba(42,41,56,0.6)' }}
+                  required
+                />
+                
+                <div className="flex justify-end gap-3 pt-2">
+                  <button 
+                    type="button" 
+                    onClick={onClose}
+                    className="px-5 py-2.5 rounded-full text-text-muted hover:text-text-primary hover:bg-bg-surface-raised transition-colors text-sm font-semibold"
+                  >
+                    Cancel
+                  </button>
+                  <button 
+                    type="submit" 
+                    disabled={submitting}
+                    className="px-5 py-2.5 rounded-full transition-all text-sm font-semibold flex items-center justify-center"
+                    style={{ background: 'linear-gradient(135deg, #EF4444, #DC2626)', color: '#fff', boxShadow: '0 4px 15px rgba(239,68,68,0.2)' }}
+                  >
+                    {submitting ? 'Submitting...' : 'Submit Report'}
+                  </button>
+                </div>
+              </form>
+            </div>
           </motion.div>
         </div>
       )}
