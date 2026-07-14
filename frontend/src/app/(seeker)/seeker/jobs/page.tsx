@@ -4,10 +4,12 @@ import { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import { MapPin, Briefcase, RefreshCw, Search, Mic } from 'lucide-react';
 import Button from '@/components/Button';
+import EmptyState from '@/components/EmptyState';
+import { StatusTag } from '@/components/ui/DashboardStyles';
 
 const fadeUp = {
   hidden: { opacity: 0, y: 20 },
-  show: { opacity: 1, y: 0, transition: { duration: 0.5, ease: [0.4, 0, 0.2, 1] } },
+  show: { opacity: 1, y: 0, transition: { duration: 0.5, ease: [0.4, 0, 0.2, 1] as [number, number, number, number] } },
 };
 
 export default function SeekerJobs() {
@@ -188,9 +190,10 @@ export default function SeekerJobs() {
               <span className="font-mono text-sm">Searching nearby...</span>
             </div>
           ) : filteredJobs.length === 0 ? (
-            <div className="text-center text-text-muted mt-10 p-10 glass-card">
-              No jobs found matching your search.
-            </div>
+            <EmptyState
+              title="No jobs found"
+              description="Try widening your search queries or change your category filter."
+            />
           ) : (
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               {filteredJobs.map((job, idx) => (
@@ -210,16 +213,12 @@ export default function SeekerJobs() {
 
                     <div className="flex justify-between items-start mb-2">
                       <h3 className="font-display font-bold text-lg text-text-primary group-hover:text-violet transition-colors">{job.title}</h3>
-                      <span className="text-xs font-bold px-2.5 py-1 rounded-lg font-mono shrink-0"
-                        style={{ background: 'rgba(52,211,153,0.08)', border: '1px solid rgba(52,211,153,0.2)', color: '#34D399' }}>
-                        {job.desc.split(' • ')[0]}
-                      </span>
+                      <StatusTag color="signal">{job.desc.split(' • ')[0]}</StatusTag>
                     </div>
 
-                    <span className="text-xs text-text-muted mb-3 inline-block px-2.5 py-1 rounded-lg font-mono"
-                      style={{ background: 'rgba(42,41,56,0.3)', border: '1px solid rgba(42,41,56,0.3)' }}>
-                      {job.desc.split(' • ')[1]}
-                    </span>
+                    <div className="mb-3">
+                      <StatusTag color="muted">{job.desc.split(' • ')[1]}</StatusTag>
+                    </div>
 
                     <p className="text-sm text-text-muted flex-1 mb-4 leading-relaxed">
                       {job.full_description}

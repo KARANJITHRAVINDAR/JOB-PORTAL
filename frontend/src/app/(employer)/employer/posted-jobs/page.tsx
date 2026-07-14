@@ -7,6 +7,7 @@ import ReportModal from '@/components/ReportModal';
 import { QRCodeSVG } from 'qrcode.react';
 import Button from '@/components/Button';
 import { FloatingOrbs, staggerContainer, fadeUp, PageHeader, inputStyle, inputBg } from '@/components/DesignSystem';
+import EmptyState from '@/components/EmptyState';
 
 export default function PostedJobs() {
   const [user, setUser] = useState<any>(null);
@@ -120,7 +121,11 @@ export default function PostedJobs() {
           {loading ? (
             <div className="text-center py-10 text-text-muted font-mono text-sm animate-pulse">Loading jobs...</div>
           ) : (activeTab === 'ongoing' ? ongoingJobs : completedJobs).length === 0 ? (
-            <div className="text-center py-10 text-text-muted glass-card">No {activeTab} jobs.</div>
+            <EmptyState
+              title={`No ${activeTab} jobs`}
+              description={activeTab === 'ongoing' ? 'You currently have no ongoing jobs.' : 'No completed jobs records found.'}
+              onEnableAlerts={activeTab === 'ongoing' ? () => window.location.href = '/employer/post' : undefined}
+            />
           ) : (
             (activeTab === 'ongoing' ? ongoingJobs : completedJobs).map((job) => {
               const applications = job.applications || [];
@@ -189,6 +194,13 @@ export default function PostedJobs() {
                                 <span className="text-sm font-medium text-text-primary flex items-center gap-2">
                                   {app.name}
                                   {app.slots_taken > 1 && <span className="text-[10px] px-2 py-0.5 rounded-full" style={{ background: 'rgba(52,211,153,0.08)', border: '1px solid rgba(52,211,153,0.2)', color: '#34D399' }}>Squad of {app.slots_taken}</span>}
+                                  <span className="text-[10px] px-1.5 py-0.5 rounded-full font-medium"
+                                    style={app.is_available !== 0
+                                      ? { background: 'rgba(52,211,153,0.1)', border: '1px solid rgba(52,211,153,0.25)', color: '#34D399' }
+                                      : { background: 'rgba(239,68,68,0.1)', border: '1px solid rgba(239,68,68,0.25)', color: '#f87171' }
+                                    }>
+                                    {app.is_available !== 0 ? '● Available' : '● Busy'}
+                                  </span>
                                 </span>
                                 <div className="flex items-center gap-2 mt-1">
                                   <span className="font-mono text-xs text-signal">{app.phone}</span>
@@ -213,6 +225,13 @@ export default function PostedJobs() {
                                 <span className="text-sm font-medium text-text-primary flex items-center gap-2">
                                   {app.name}
                                   {app.slots_taken > 1 && <span className="text-[10px] px-2 py-0.5 rounded-full" style={{ background: 'rgba(139,92,246,0.08)', border: '1px solid rgba(139,92,246,0.2)', color: '#8B5CF6' }}>Squad of {app.slots_taken}</span>}
+                                  <span className="text-[10px] px-1.5 py-0.5 rounded-full font-medium"
+                                    style={app.is_available !== 0
+                                      ? { background: 'rgba(52,211,153,0.1)', border: '1px solid rgba(52,211,153,0.25)', color: '#34D399' }
+                                      : { background: 'rgba(239,68,68,0.1)', border: '1px solid rgba(239,68,68,0.25)', color: '#f87171' }
+                                    }>
+                                    {app.is_available !== 0 ? '● Available' : '● Busy'}
+                                  </span>
                                 </span>
                                 <span className="text-[10px] text-text-muted font-mono">Trust: {app.trust_score}</span>
                               </div>

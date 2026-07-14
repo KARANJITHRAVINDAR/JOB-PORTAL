@@ -3,10 +3,11 @@
 import { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import { User, MapPin, Briefcase, Phone, Calendar, Upload, ShieldCheck, Check, X, Users, Zap, TrendingUp } from 'lucide-react';
+import { StatusTag } from '@/components/ui/DashboardStyles';
 
 const fadeUp = {
   hidden: { opacity: 0, y: 20 },
-  show: { opacity: 1, y: 0, transition: { duration: 0.5, ease: [0.4, 0, 0.2, 1] } },
+  show: { opacity: 1, y: 0, transition: { duration: 0.5, ease: [0.4, 0, 0.2, 1] as [number, number, number, number] } },
 };
 
 export default function SeekerProfile() {
@@ -195,11 +196,9 @@ export default function SeekerProfile() {
                   </div>
                 </div>
 
-                {/* Trust Score */}
-                <span className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-bold font-mono tracking-wider"
-                  style={{ background: `${accentColor}10`, border: `1px solid ${accentColor}25`, color: accentColor }}>
-                  <ShieldCheck size={14} /> TRUST: {trustScore}
-                </span>
+                <StatusTag color={isLowTrust ? 'red' : 'signal'}>
+                  TRUST: {trustScore}
+                </StatusTag>
               </div>
             </div>
           </motion.div>
@@ -317,10 +316,9 @@ export default function SeekerProfile() {
                     </span>
                   </div>
                 ) : (
-                  <p className="font-medium inline-flex px-3 py-1.5 rounded-lg text-sm"
-                    style={{ background: 'rgba(139,92,246,0.06)', border: '1px solid rgba(139,92,246,0.15)', color: '#8B5CF6' }}>
+                  <StatusTag color="violet">
                     {user.squad_size > 1 ? `Squad of ${user.squad_size}` : 'Individual (1)'}
-                  </p>
+                  </StatusTag>
                 )}
                 <p className="text-xs text-text-muted mt-1">If you lead a team of workers, increase your squad size.</p>
               </div>

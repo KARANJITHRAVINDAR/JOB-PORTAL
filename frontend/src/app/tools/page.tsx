@@ -6,6 +6,8 @@ import { Wrench, DollarSign, ShieldCheck, Plus, X } from 'lucide-react';
 import Link from 'next/link';
 import Button from '@/components/Button';
 import { FloatingOrbs, staggerContainer, fadeUp, PageHeader, inputStyle, inputBg } from '@/components/DesignSystem';
+import EmptyState from '@/components/EmptyState';
+import { StatusTag } from '@/components/ui/DashboardStyles';
 
 export default function ToolsHub() {
   const [tools, setTools] = useState<any[]>([]);
@@ -63,7 +65,11 @@ export default function ToolsHub() {
         {loading ? (
           <div className="text-center py-10 text-text-muted font-mono text-sm animate-pulse">Loading tools...</div>
         ) : tools.length === 0 ? (
-          <div className="glass-card text-center py-10 text-text-muted">No tools available nearby. Be the first to post!</div>
+          <EmptyState
+            title="No tools found"
+            description="Peers nearby haven't posted any tools for rent yet. Be the first to list yours!"
+            onEnableAlerts={() => setShowPostModal(true)}
+          />
         ) : (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
             {tools.map((tool, idx) => (
@@ -77,8 +83,7 @@ export default function ToolsHub() {
                   <div>
                     <div className="flex justify-between items-start mb-3">
                       <h3 className="font-display font-bold text-lg text-text-primary group-hover:text-marigold transition-colors">{tool.name}</h3>
-                      <span className="px-2.5 py-0.5 rounded-lg text-xs font-mono text-text-muted"
-                        style={{ background: 'rgba(42,41,56,0.5)', border: '1px solid rgba(42,41,56,0.6)' }}>{tool.category}</span>
+                      <StatusTag color="muted">{tool.category}</StatusTag>
                     </div>
                     <div className="space-y-2 text-sm">
                       <p className="flex items-center gap-2">

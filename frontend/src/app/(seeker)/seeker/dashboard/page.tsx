@@ -14,6 +14,8 @@ import SignalPing from '@/components/SignalPing';
 import JobCard from '@/components/JobCard';
 import TrustCard from '@/components/TrustCard';
 import EmptyState from '@/components/EmptyState';
+import { LiveStatusToggle, QuickLinkChip, StatusTag } from '@/components/ui/DashboardStyles';
+
 
 // Floating background orbs for dynamic aesthetic
 function FloatingOrbs() {
@@ -53,7 +55,7 @@ const staggerContainer = {
 
 const fadeUp = {
   hidden: { opacity: 0, y: 20 },
-  show: { opacity: 1, y: 0, transition: { duration: 0.5, ease: [0.4, 0, 0.2, 1] } },
+  show: { opacity: 1, y: 0, transition: { duration: 0.5, ease: [0.4, 0, 0.2, 1] as [number, number, number, number] } },
 };
 
 export default function SeekerDashboard() {
@@ -64,12 +66,14 @@ export default function SeekerDashboard() {
   const [applications, setApplications] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [scanningJobId, setScanningJobId] = useState<string | null>(null);
+  const [togglingAvailability, setTogglingAvailability] = useState(false);
 
   useEffect(() => {
     const userData = localStorage.getItem('user');
     if (userData) {
       const parsed = JSON.parse(userData);
       setUser(parsed);
+      setAvailable(parsed.is_available !== undefined ? !!parsed.is_available : true);
       fetchJobs(parsed);
       fetchApplications(parsed.id);
 
@@ -79,6 +83,7 @@ export default function SeekerDashboard() {
           .then(latestUser => {
             if (!latestUser.error) {
               setUser(latestUser);
+              setAvailable(latestUser.is_available !== undefined ? !!latestUser.is_available : true);
               localStorage.setItem('user', JSON.stringify(latestUser));
             }
           })
@@ -93,6 +98,30 @@ export default function SeekerDashboard() {
       };
     }
   }, []);
+
+  const handleToggleAvailability = async () => {
+    if (!user || togglingAvailability) return;
+    const newAvailable = !available;
+    setTogglingAvailability(true);
+    try {
+      const res = await fetch('http://localhost:4000/api/auth/availability', {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ id: user.id, is_available: newAvailable }),
+      });
+      if (res.ok) {
+        setAvailable(newAvailable);
+        const updatedUser = { ...user, is_available: newAvailable };
+        setUser(updatedUser);
+        localStorage.setItem('user', JSON.stringify(updatedUser));
+      } else {
+        console.error('Failed to update availability');
+      }
+    } catch (e) {
+      console.error('Error updating availability', e);
+    }
+    setTogglingAvailability(false);
+  };
 
   const fetchJobs = async (userData: any) => {
     try {
@@ -191,7 +220,7 @@ export default function SeekerDashboard() {
                 className="text-4xl md:text-5xl font-display font-extrabold tracking-tight text-text-primary leading-[1.1]"
                 initial={{ opacity: 0, x: -30 }}
                 animate={{ opacity: 1, x: 0 }}
-                transition={{ duration: 0.6, ease: [0.4, 0, 0.2, 1] }}
+                transition={{ duration: 0.6, ease: [0.4, 0, 0.2, 1] as [number, number, number, number] }}
               >
                 {t('welcome_back')}
                 <span className="bg-clip-text text-transparent" style={{ backgroundImage: 'linear-gradient(135deg, #8B5CF6, #34D399)' }}>
@@ -203,16 +232,11 @@ export default function SeekerDashboard() {
               </p>
             </div>
 
-            <motion.div whileHover={{ scale: 1.03 }} whileTap={{ scale: 0.97 }}>
-              <Button
-                variant={available ? 'signal' : 'secondary'}
-                onClick={() => setAvailable(!available)}
-                className="self-start sm:self-auto py-2.5 px-5 font-semibold text-xs border transition-all duration-300"
-              >
-                <SignalPing color={available ? 'signal' : 'muted'} size="sm" />
-                {available ? 'Available Now' : 'Busy'}
-              </Button>
-            </motion.div>
+            <LiveStatusToggle
+              available={available}
+              onToggle={handleToggleAvailability}
+              disabled={togglingAvailability}
+            />
           </div>
         </motion.header>
 
@@ -246,28 +270,10 @@ export default function SeekerDashboard() {
           />
         </motion.div>
 
-        {/* Quick Links */}
         <motion.div variants={fadeUp} className="flex flex-wrap gap-3">
-          {[
-            { href: '/seeker/my-jobs', icon: Briefcase, label: t('my_jobs'), color: '#8B5CF6' },
-            { href: '/seeker/profile', icon: ShieldCheck, label: t('nav_my_profile'), color: '#34D399' },
-            { href: '/tools', icon: Sparkles, label: 'Rent Tools', color: '#F2A93B' },
-          ].map((item) => (
-            <Link key={item.href} href={item.href}>
-              <motion.div
-                whileHover={{ scale: 1.04, y: -2 }}
-                whileTap={{ scale: 0.97 }}
-                className="flex items-center gap-2.5 px-5 py-2.5 rounded-xl text-xs font-semibold text-text-primary cursor-pointer transition-all duration-300"
-                style={{
-                  background: `linear-gradient(135deg, ${item.color}12, ${item.color}06)`,
-                  border: `1px solid ${item.color}25`,
-                }}
-              >
-                <item.icon size={16} style={{ color: item.color }} />
-                {item.label}
-              </motion.div>
-            </Link>
-          ))}
+          <QuickLinkChip href="/seeker/my-jobs" icon={Briefcase} label={t('my_jobs')} color="#8B5CF6" />
+          <QuickLinkChip href="/seeker/profile" icon={ShieldCheck} label={t('nav_my_profile')} color="#34D399" />
+          <QuickLinkChip href="/tools" icon={Sparkles} label="Rent Tools" color="#F2A93B" />
         </motion.div>
 
         {/* Accepted Applications */}
@@ -295,10 +301,9 @@ export default function SeekerDashboard() {
                 </div>
               </div>
               <div className="flex flex-col items-center md:items-end gap-2">
-                <span className="text-xs text-signal font-mono font-bold uppercase tracking-widest px-3 py-1 rounded-full"
-                  style={{ background: 'rgba(52,211,153,0.08)', border: '1px solid rgba(52,211,153,0.2)' }}>
+                <StatusTag color="signal">
                   {app.status === 'IN_PROGRESS' ? 'Currently Clocked In' : 'Travel Advance Sent via UPI'}
-                </span>
+                </StatusTag>
                 <span className="text-[10px] text-text-muted uppercase tracking-widest font-sans">Contact Employer</span>
                 <span className="text-xl font-mono text-violet tracking-wider px-5 py-2 rounded-xl"
                   style={{ background: 'rgba(28,27,41,0.8)', border: '1px solid rgba(42,41,56,0.6)' }}>
@@ -331,9 +336,8 @@ export default function SeekerDashboard() {
                   </div>
                   <div className="flex-1 min-w-0">
                     <h4 className="font-semibold text-sm text-text-primary truncate font-sans">{app.title}</h4>
-                    <p className="text-xs text-text-muted mt-0.5 font-sans">
-                      Status: <span className="font-mono text-marigold text-[10px] px-1.5 py-0.5 rounded"
-                        style={{ background: 'rgba(242,169,59,0.08)' }}>{app.status}</span> — Waiting for employer response.
+                    <p className="text-xs text-text-muted mt-1 flex items-center gap-2 font-sans">
+                      Status: <StatusTag color="marigold">{app.status}</StatusTag> — Waiting for employer response.
                     </p>
                   </div>
                 </div>

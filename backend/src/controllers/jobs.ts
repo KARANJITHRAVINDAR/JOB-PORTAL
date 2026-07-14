@@ -133,7 +133,7 @@ export const getEmployerJobs = async (req: Request, res: Response) => {
     const { employerId } = req.params;
     const query = `
       SELECT j.*, 
-        (SELECT JSON_ARRAYAGG(JSON_OBJECT('id', a.id, 'worker_id', u.id, 'name', u.name, 'phone', u.phone, 'trust_score', u.trust_score, 'status', a.status, 'photo_url', u.photo_url, 'slots_taken', a.slots_taken))
+        (SELECT JSON_ARRAYAGG(JSON_OBJECT('id', a.id, 'worker_id', u.id, 'name', u.name, 'phone', u.phone, 'trust_score', u.trust_score, 'status', a.status, 'photo_url', u.photo_url, 'slots_taken', a.slots_taken, 'is_available', COALESCE(u.is_available, 1)))
          FROM applications a JOIN users u ON a.worker_id = u.id 
          WHERE a.job_id = j.id) as applications
       FROM jobs j

@@ -9,6 +9,9 @@ import { useLanguage } from '@/context/LanguageContext';
 import Button from '@/components/Button';
 import { FloatingOrbs, staggerContainer, fadeUp, PageHeader } from '@/components/DesignSystem';
 
+import TrustCard from '@/components/TrustCard';
+import EmptyState from '@/components/EmptyState';
+
 export default function EmployerDashboard() {
   const { t } = useLanguage();
   const [user, setUser] = useState<any>(null);
@@ -68,7 +71,7 @@ export default function EmployerDashboard() {
   return (
     <div className="relative min-h-screen pb-20">
       <FloatingOrbs />
-      <motion.div variants={staggerContainer} initial="hidden" animate="show" className="relative z-10 space-y-8">
+      <motion.div variants={staggerContainer} initial="hidden" animate="show" className="relative z-10 space-y-8 animate-fade-in">
         {user && <NotificationBanner userId={user.id} />}
 
         <motion.div variants={fadeUp}>
@@ -95,6 +98,11 @@ export default function EmployerDashboard() {
               </Link>
             </div>
           </div>
+        </motion.div>
+
+        {/* Hero Card for Employer */}
+        <motion.div variants={fadeUp}>
+          {user && <TrustCard user={user} />}
         </motion.div>
 
         {/* Accepted Worker Alert */}
@@ -160,9 +168,11 @@ export default function EmployerDashboard() {
             {loading ? (
               <div className="text-center py-10 text-text-muted font-mono text-sm animate-pulse">Loading jobs...</div>
             ) : jobs.length === 0 ? (
-              <div className="glass-card text-center py-10 text-text-muted">
-                {t('no_jobs_posted')} <Link href="/employer/post" className="text-violet underline">{t('post_one_now')}</Link>.
-              </div>
+              <EmptyState
+                title={t('no_jobs_posted') || 'No jobs posted yet'}
+                description={t('post_one_now') || 'Get started by creating your first job request.'}
+                onEnableAlerts={() => window.location.href = '/employer/post'}
+              />
             ) : jobs.map((job, idx) => {
               const applications = job.applications || [];
               const accepted = applications.filter((a: any) => a.status === 'ACCEPTED').length;
@@ -202,9 +212,18 @@ export default function EmployerDashboard() {
                               </div>
                               <div>
                                 <h5 className="font-semibold text-sm text-text-primary">{app.name}</h5>
-                                <span className="text-[10px] flex items-center gap-1 mt-0.5" style={{ color: '#34D399' }}>
-                                  <ShieldCheck size={10} /> Trust: {app.trust_score}
-                                </span>
+                                <div className="flex items-center gap-2 mt-0.5">
+                                  <span className="text-[10px] flex items-center gap-1" style={{ color: '#34D399' }}>
+                                    <ShieldCheck size={10} /> Trust: {app.trust_score}
+                                  </span>
+                                  <span className="text-[10px] px-1.5 py-0.5 rounded-full font-medium"
+                                    style={app.is_available !== 0
+                                      ? { background: 'rgba(52,211,153,0.1)', border: '1px solid rgba(52,211,153,0.25)', color: '#34D399' }
+                                      : { background: 'rgba(239,68,68,0.1)', border: '1px solid rgba(239,68,68,0.25)', color: '#f87171' }
+                                    }>
+                                    {app.is_available !== 0 ? '● Available' : '● Busy'}
+                                  </span>
+                                </div>
                               </div>
                             </div>
                             <div className="flex gap-2">

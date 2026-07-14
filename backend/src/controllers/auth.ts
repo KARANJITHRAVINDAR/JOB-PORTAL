@@ -75,7 +75,7 @@ export const login = async (req: Request, res: Response) => {
 
     res.json({
       message: 'Login successful',
-      user: { id: user.id, name: user.name, role: user.role, phone: user.phone, trust_score: user.trust_score, address: user.address, age: user.age, photo_url: user.photo_url, category_sought: user.category_sought, preferred_language: user.preferred_language, xp: user.xp || 0, level: user.level || 1, badges, squad_size: user.squad_size || 1 },
+      user: { id: user.id, name: user.name, role: user.role, phone: user.phone, trust_score: user.trust_score, address: user.address, age: user.age, photo_url: user.photo_url, category_sought: user.category_sought, preferred_language: user.preferred_language, xp: user.xp || 0, level: user.level || 1, badges, squad_size: user.squad_size || 1, is_available: user.is_available === null ? true : !!user.is_available },
       token
     });
 
@@ -123,7 +123,7 @@ export const getUser = async (req: Request, res: Response) => {
     const badges = badgeRows.map((r: any) => r.badge_name);
 
     res.json({
-      id: user.id, name: user.name, role: user.role, phone: user.phone, trust_score: user.trust_score, address: user.address, age: user.age, photo_url: user.photo_url, category_sought: user.category_sought, preferred_language: user.preferred_language, xp: user.xp || 0, level: user.level || 1, badges, squad_size: user.squad_size || 1
+      id: user.id, name: user.name, role: user.role, phone: user.phone, trust_score: user.trust_score, address: user.address, age: user.age, photo_url: user.photo_url, category_sought: user.category_sought, preferred_language: user.preferred_language, xp: user.xp || 0, level: user.level || 1, badges, squad_size: user.squad_size || 1, is_available: user.is_available === null ? true : !!user.is_available
     });
   } catch (error) {
     console.error(error);
@@ -141,9 +141,10 @@ export const getNearbyWorkers = async (req: Request, res: Response) => {
     const params: any[] = [pointStr, pointStr, radiusMeters];
 
     let query = `
-      SELECT id, name, phone, role, trust_score, ST_X(location) as lat, ST_Y(location) as lng, category_sought, ST_Distance_Sphere(location, ST_GeomFromText(?)) as distance
+      SELECT id, name, phone, role, trust_score, ST_X(location) as lat, ST_Y(location) as lng, category_sought, is_available, ST_Distance_Sphere(location, ST_GeomFromText(?)) as distance
       FROM users
       WHERE role = 'worker'
+      AND (is_available = true OR is_available IS NULL)
       AND ST_Distance_Sphere(location, ST_GeomFromText(?)) <= ?
     `;
 
@@ -159,5 +160,21 @@ export const getNearbyWorkers = async (req: Request, res: Response) => {
   } catch (error) {
     console.error(error);
     res.status(500).json({ error: 'Failed to fetch nearby workers' });
+  }
+};
+
+export const updateAvailability = async (req: Request, res: Response) => {
+  try {
+    const { id, is_available } = req.body;
+    if (!id || is_available === undefined) {
+      return res.status(400).json({ error: 'User ID and is_available are required' });
+    }
+
+    await pool.query('UPDATE users SET is_available = ? WHERE id = ?', [is_available ? 1 : 0, id]);
+
+    res.json({ message: 'Availability updated successfully', is_available: !!is_available });
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ error: 'Failed to update availability' });
   }
 };

@@ -6,6 +6,8 @@ import { MapPin, Briefcase, IndianRupee, AlertTriangle, Phone, CheckCircle, Cloc
 import ReportModal from '@/components/ReportModal';
 import Link from 'next/link';
 import { FloatingOrbs, staggerContainer, fadeUp, PageHeader } from '@/components/DesignSystem';
+import EmptyState from '@/components/EmptyState';
+import { StatusTag } from '@/components/ui/DashboardStyles';
 
 export default function MyJobs() {
   const [user, setUser] = useState<any>(null);
@@ -42,19 +44,11 @@ export default function MyJobs() {
   };
 
   const statusBadge = (type: string) => {
-    const config: Record<string, { bg: string; border: string; color: string; icon: any; label: string }> = {
-      applied: { bg: 'rgba(242,169,59,0.06)', border: 'rgba(242,169,59,0.15)', color: '#F2A93B', icon: Clock, label: 'Pending' },
-      selected: { bg: 'rgba(52,211,153,0.06)', border: 'rgba(52,211,153,0.15)', color: '#34D399', icon: CheckCircle, label: 'Selected' },
-      completed: { bg: 'rgba(141,139,158,0.06)', border: 'rgba(141,139,158,0.15)', color: '#8D8B9E', icon: CheckCircle, label: 'Completed' },
-    };
-    const c = config[type];
-    return (
-      <span className="px-3 py-1 rounded-lg text-xs font-semibold uppercase tracking-wider flex items-center gap-1 font-mono"
-        style={{ background: c.bg, border: `1px solid ${c.border}`, color: c.color }}>
-        <c.icon size={11} /> {c.label}
-      </span>
-    );
+    if (type === 'applied') return <StatusTag color="marigold">Pending</StatusTag>;
+    if (type === 'selected') return <StatusTag color="signal">Selected</StatusTag>;
+    return <StatusTag color="muted">Completed</StatusTag>;
   };
+
 
   return (
     <div className="relative min-h-screen pb-20">
@@ -83,7 +77,11 @@ export default function MyJobs() {
           {loading ? (
             <div className="text-center py-10 text-text-muted font-mono text-sm animate-pulse">Loading your jobs...</div>
           ) : getJobsList().length === 0 ? (
-            <div className="text-center py-10 glass-card text-text-muted">No jobs found in this category.</div>
+            <EmptyState
+              title="No jobs found"
+              description={`You have no jobs listed under the "${activeTab}" status right now.`}
+              onEnableAlerts={() => window.location.href = '/seeker/jobs'}
+            />
           ) : getJobsList().map((app) => (
             <motion.div key={app.application_id} variants={fadeUp} className="glass-card relative overflow-hidden">
               <div className="flex justify-between items-start mb-2">

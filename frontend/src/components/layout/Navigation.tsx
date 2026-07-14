@@ -6,26 +6,14 @@ import { Home, Briefcase, Map, User, PlusCircle, Users, ClipboardList, Globe, Lo
 import { motion } from 'framer-motion';
 import { useLanguage } from '@/context/LanguageContext';
 
-export const BottomNav = ({ role }: { role: 'seeker' | 'employer' }) => {
+export interface NavItem {
+  name: string;
+  href: string;
+  icon: React.ComponentType<{ size?: number; className?: string; style?: React.CSSProperties }>;
+}
+
+export const AppBottomNav = ({ items, role }: { items: NavItem[]; role: 'seeker' | 'employer' }) => {
   const pathname = usePathname();
-  const { t } = useLanguage();
-
-  const seekerLinks = [
-    { name: t('nav_home'), href: '/seeker/dashboard', icon: Home },
-    { name: t('nav_jobs'), href: '/seeker/jobs', icon: Briefcase },
-    { name: t('nav_map'), href: '/seeker/map', icon: Map },
-    { name: t('nav_profile'), href: '/seeker/profile', icon: User },
-  ];
-
-  const employerLinks = [
-    { name: t('nav_dashboard'), href: '/employer/dashboard', icon: Home },
-    { name: t('nav_posted_jobs'), href: '/employer/posted-jobs', icon: ClipboardList },
-    { name: t('nav_post'), href: '/employer/post', icon: PlusCircle },
-    { name: t('nav_workers'), href: '/employer/workers', icon: Users },
-    { name: t('nav_profile'), href: '/employer/profile', icon: User },
-  ];
-
-  const links = role === 'seeker' ? seekerLinks : employerLinks;
 
   return (
     <nav className="fixed bottom-0 w-full md:hidden z-50 pb-safe"
@@ -36,14 +24,14 @@ export const BottomNav = ({ role }: { role: 'seeker' | 'employer' }) => {
       }}
     >
       <ul className="flex justify-around items-center h-16">
-        {links.map((link) => {
+        {items.map((link) => {
           const isActive = pathname.startsWith(link.href);
           return (
             <li key={link.name} className="flex-1">
               <Link href={link.href} className="flex flex-col items-center justify-center w-full h-full relative">
                 {isActive && (
                   <motion.div
-                    layoutId="nav-pill"
+                    layoutId={`nav-pill-${role}`}
                     className="absolute -top-0.5 w-8 h-1 rounded-full"
                     style={{ background: 'linear-gradient(90deg, #8B5CF6, #34D399)' }}
                   />
@@ -65,26 +53,9 @@ export const BottomNav = ({ role }: { role: 'seeker' | 'employer' }) => {
   );
 };
 
-export const Sidebar = ({ role }: { role: 'seeker' | 'employer' }) => {
+export const AppSidebar = ({ items, role }: { items: NavItem[]; role: 'seeker' | 'employer' }) => {
   const pathname = usePathname();
   const { t, language, setLanguage } = useLanguage();
-
-  const seekerLinks = [
-    { name: t('nav_dashboard'), href: '/seeker/dashboard', icon: Home },
-    { name: t('nav_find_jobs'), href: '/seeker/jobs', icon: Briefcase },
-    { name: t('nav_worker_radar'), href: '/seeker/map', icon: Map },
-    { name: t('nav_my_profile'), href: '/seeker/profile', icon: User },
-  ];
-
-  const employerLinks = [
-    { name: t('nav_dashboard'), href: '/employer/dashboard', icon: Home },
-    { name: t('nav_posted_jobs'), href: '/employer/posted-jobs', icon: ClipboardList },
-    { name: t('nav_post_job'), href: '/employer/post', icon: PlusCircle },
-    { name: t('nav_worker_radar'), href: '/employer/workers', icon: Users },
-    { name: t('nav_company_profile'), href: '/employer/profile', icon: User },
-  ];
-
-  const links = role === 'seeker' ? seekerLinks : employerLinks;
 
   return (
     <aside
@@ -117,7 +88,7 @@ export const Sidebar = ({ role }: { role: 'seeker' | 'employer' }) => {
       {/* Navigation */}
       <nav className="flex-1 px-3 mt-2">
         <ul className="space-y-1">
-          {links.map((link) => {
+          {items.map((link) => {
             const isActive = pathname.startsWith(link.href);
             return (
               <li key={link.name}>
@@ -130,7 +101,7 @@ export const Sidebar = ({ role }: { role: 'seeker' | 'employer' }) => {
                 >
                   {isActive && (
                     <motion.div
-                      layoutId="sidebar-active"
+                      layoutId={`sidebar-active-${role}`}
                       className="absolute left-0 top-1/2 -translate-y-1/2 w-[3px] h-6 rounded-r-full"
                       style={{ background: 'linear-gradient(180deg, #8B5CF6, #34D399)' }}
                       transition={{ type: 'spring', stiffness: 300, damping: 30 }}
@@ -160,7 +131,7 @@ export const Sidebar = ({ role }: { role: 'seeker' | 'employer' }) => {
           <select
             value={language}
             onChange={(e) => setLanguage(e.target.value as any)}
-            className="bg-transparent text-sm text-text-muted focus:outline-none appearance-none cursor-pointer hover:text-text-primary transition-colors"
+            className="bg-transparent text-sm text-text-muted focus:outline-none appearance-none cursor-pointer hover:text-text-primary transition-colors w-full"
           >
             <option value="en" className="bg-bg-void">English</option>
             <option value="ta" className="bg-bg-void">தமிழ்</option>
@@ -183,3 +154,50 @@ export const Sidebar = ({ role }: { role: 'seeker' | 'employer' }) => {
     </aside>
   );
 };
+
+export const BottomNav = ({ role }: { role: 'seeker' | 'employer' }) => {
+  const { t } = useLanguage();
+
+  const seekerLinks = [
+    { name: t('nav_home'), href: '/seeker/dashboard', icon: Home },
+    { name: t('nav_jobs'), href: '/seeker/jobs', icon: Briefcase },
+    { name: t('nav_map'), href: '/seeker/map', icon: Map },
+    { name: t('nav_profile'), href: '/seeker/profile', icon: User },
+  ];
+
+  const employerLinks = [
+    { name: t('nav_dashboard'), href: '/employer/dashboard', icon: Home },
+    { name: t('nav_posted_jobs'), href: '/employer/posted-jobs', icon: ClipboardList },
+    { name: t('nav_post'), href: '/employer/post', icon: PlusCircle },
+    { name: t('nav_workers'), href: '/employer/workers', icon: Users },
+    { name: t('nav_profile'), href: '/employer/profile', icon: User },
+  ];
+
+  const links = role === 'seeker' ? seekerLinks : employerLinks;
+
+  return <AppBottomNav items={links} role={role} />;
+};
+
+export const Sidebar = ({ role }: { role: 'seeker' | 'employer' }) => {
+  const { t } = useLanguage();
+
+  const seekerLinks = [
+    { name: t('nav_dashboard'), href: '/seeker/dashboard', icon: Home },
+    { name: t('nav_find_jobs'), href: '/seeker/jobs', icon: Briefcase },
+    { name: t('nav_worker_radar'), href: '/seeker/map', icon: Map },
+    { name: t('nav_my_profile'), href: '/seeker/profile', icon: User },
+  ];
+
+  const employerLinks = [
+    { name: t('nav_dashboard'), href: '/employer/dashboard', icon: Home },
+    { name: t('nav_posted_jobs'), href: '/employer/posted-jobs', icon: ClipboardList },
+    { name: t('nav_post_job'), href: '/employer/post', icon: PlusCircle },
+    { name: t('nav_worker_radar'), href: '/employer/workers', icon: Users },
+    { name: t('nav_company_profile'), href: '/employer/profile', icon: User },
+  ];
+
+  const links = role === 'seeker' ? seekerLinks : employerLinks;
+
+  return <AppSidebar items={links} role={role} />;
+};
+
