@@ -6,11 +6,8 @@ import { MapPin, Briefcase, RefreshCw, Search, Mic } from 'lucide-react';
 import Button from '@/components/Button';
 import EmptyState from '@/components/EmptyState';
 import { StatusTag } from '@/components/ui/DashboardStyles';
-
-const fadeUp = {
-  hidden: { opacity: 0, y: 20 },
-  show: { opacity: 1, y: 0, transition: { duration: 0.5, ease: [0.4, 0, 0.2, 1] as [number, number, number, number] } },
-};
+import { FloatingOrbs, staggerContainer, fadeUp, PageHeader, inputStyle, inputBg } from '@/components/DesignSystem';
+import JobCard from '@/components/JobCard';
 
 export default function SeekerJobs() {
   const [jobs, setJobs] = useState<any[]>([]);
@@ -34,11 +31,8 @@ export default function SeekerJobs() {
       const data = await res.json();
       
       const formatted = Array.isArray(data) ? data.map(j => ({
-        id: j.id,
-        title: j.title,
-        desc: `₹${j.wage} • ${j.category}`,
-        distance: (j.distance / 1000).toFixed(1),
-        full_description: j.description || 'No detailed description provided by the employer.'
+        ...j,
+        description: j.description || 'No detailed description provided by the employer.'
       })) : [];
       
       setJobs(formatted);
@@ -109,45 +103,35 @@ export default function SeekerJobs() {
   }, []);
 
   const filteredJobs = jobs.filter(job =>
-    job.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
-    job.desc.toLowerCase().includes(searchQuery.toLowerCase())
+    job.title?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+    job.category?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+    job.description?.toLowerCase().includes(searchQuery.toLowerCase())
   );
 
   return (
-    <div className="min-h-[calc(100vh-6rem)] md:min-h-[calc(100vh-4rem)] flex flex-col gap-6 pb-20 relative">
-      {/* Floating orbs */}
-      <div className="fixed inset-0 pointer-events-none overflow-hidden z-0">
-        <div className="absolute w-[400px] h-[400px] rounded-full animate-float"
-          style={{ top: '-5%', right: '-8%', background: 'radial-gradient(circle, rgba(139,92,246,0.06) 0%, transparent 70%)', filter: 'blur(40px)' }} />
-        <div className="absolute w-[300px] h-[300px] rounded-full animate-float-delayed"
-          style={{ bottom: '15%', left: '-5%', background: 'radial-gradient(circle, rgba(52,211,153,0.04) 0%, transparent 70%)', filter: 'blur(50px)' }} />
-      </div>
+    <div className="relative min-h-screen pb-20">
+      <FloatingOrbs />
 
-      <motion.div initial="hidden" animate="show" variants={{ show: { transition: { staggerChildren: 0.08 } } }} className="relative z-10 flex flex-col gap-6 flex-1">
-        <motion.header variants={fadeUp}>
-          <h1 className="text-2xl font-display font-extrabold flex items-center gap-2.5 text-text-primary">
-            <div className="w-8 h-8 rounded-lg flex items-center justify-center"
-              style={{ background: 'linear-gradient(135deg, rgba(139,92,246,0.15), rgba(139,92,246,0.05))', border: '1px solid rgba(139,92,246,0.2)' }}>
-              <Briefcase size={16} className="text-violet" />
-            </div>
-            Find Opportunities
-          </h1>
-          <p className="text-sm text-text-muted mt-1.5">Discover urgent jobs and apply instantly</p>
-        </motion.header>
+      <motion.div variants={staggerContainer} initial="hidden" animate="show" className="relative z-10 flex flex-col gap-6 flex-1 max-w-5xl mx-auto">
+        <motion.div variants={fadeUp}>
+          <PageHeader icon={Briefcase} title="Find Opportunities" subtitle="Discover urgent jobs and apply instantly" />
+        </motion.div>
 
         {/* Search Bar & Voice */}
-        <motion.div variants={fadeUp} className="flex gap-2">
+        <motion.div variants={fadeUp} className="flex gap-3">
           <div className="relative flex-1 group">
-            <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 text-text-muted transition-colors group-focus-within:text-violet" size={18} />
+            <div className="absolute -inset-0.5 rounded-2xl opacity-0 group-focus-within:opacity-100 transition-opacity duration-500 pointer-events-none"
+              style={{ background: 'linear-gradient(135deg, rgba(139,92,246,0.15), rgba(52,211,153,0.1))' }} />
+            <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-text-muted transition-colors group-focus-within:text-violet z-10" size={20} />
             <input
               type="text"
               placeholder="Search by job title, category, or keywords..."
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              className="w-full rounded-xl pl-10 pr-4 py-3 text-text-primary placeholder:text-text-muted/60 focus:outline-none transition-all duration-300"
+              className="relative w-full rounded-2xl pl-12 pr-4 py-4 text-text-primary placeholder:text-text-muted/60 focus:outline-none focus:border-violet/40 transition-all duration-400 font-sans shadow-lg"
               style={{
-                background: 'rgba(21,20,31,0.8)',
-                border: '1px solid rgba(42,41,56,0.5)',
+                background: 'rgba(21,20,31,0.9)',
+                border: '1px solid rgba(42,41,56,0.6)',
               }}
             />
           </div>
@@ -155,14 +139,14 @@ export default function SeekerJobs() {
             whileHover={{ scale: 1.05 }}
             whileTap={{ scale: 0.95 }}
             onClick={handleVoiceSearch}
-            className="px-4 py-3 rounded-xl flex items-center justify-center transition-all duration-300"
+            className="px-5 rounded-2xl flex items-center justify-center transition-all duration-300 shadow-[0_4px_24px_rgba(0,0,0,0.2)]"
             style={{
-              background: isListening ? 'rgba(239,68,68,0.1)' : 'rgba(139,92,246,0.08)',
-              border: `1px solid ${isListening ? 'rgba(239,68,68,0.3)' : 'rgba(139,92,246,0.2)'}`,
+              background: isListening ? 'linear-gradient(135deg, rgba(239,68,68,0.15), rgba(239,68,68,0.05))' : 'linear-gradient(135deg, rgba(139,92,246,0.15), rgba(139,92,246,0.05))',
+              border: `1px solid ${isListening ? 'rgba(239,68,68,0.3)' : 'rgba(139,92,246,0.3)'}`,
               color: isListening ? '#ef4444' : '#8B5CF6',
             }}
           >
-            <Mic size={22} className={isListening ? 'animate-pulse' : ''} />
+            <Mic size={24} className={isListening ? 'animate-pulse' : ''} />
           </motion.button>
         </motion.div>
 
@@ -198,45 +182,17 @@ export default function SeekerJobs() {
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               {filteredJobs.map((job, idx) => (
                 <motion.div
-                  key={idx}
+                  key={job.id || idx}
                   initial={{ opacity: 0, y: 20 }}
                   animate={{ opacity: 1, y: 0 }}
                   transition={{ duration: 0.4, delay: idx * 0.06 }}
-                  className="group relative overflow-hidden rounded-2xl p-[1px] transition-all duration-400 hover:-translate-y-1"
-                  style={{ background: 'linear-gradient(135deg, rgba(42,41,56,0.5) 0%, rgba(42,41,56,0.2) 100%)' }}
+                  className="h-full"
                 >
-                  <div className="rounded-2xl p-5 flex flex-col h-full relative"
-                    style={{ background: 'linear-gradient(135deg, rgba(21,20,31,0.9) 0%, rgba(28,27,41,0.7) 100%)', backdropFilter: 'blur(8px)' }}>
-                    {/* Hover shine */}
-                    <div className="absolute top-0 left-0 right-0 h-px opacity-0 group-hover:opacity-100 transition-opacity duration-500"
-                      style={{ background: 'linear-gradient(90deg, transparent, rgba(139,92,246,0.4), transparent)' }} />
-
-                    <div className="flex justify-between items-start mb-2">
-                      <h3 className="font-display font-bold text-lg text-text-primary group-hover:text-violet transition-colors">{job.title}</h3>
-                      <StatusTag color="signal">{job.desc.split(' • ')[0]}</StatusTag>
-                    </div>
-
-                    <div className="mb-3">
-                      <StatusTag color="muted">{job.desc.split(' • ')[1]}</StatusTag>
-                    </div>
-
-                    <p className="text-sm text-text-muted flex-1 mb-4 leading-relaxed">
-                      {job.full_description}
-                    </p>
-
-                    <div className="mt-auto pt-3 flex justify-between items-center" style={{ borderTop: '1px solid rgba(42,41,56,0.3)' }}>
-                      <span className="text-xs flex items-center gap-1.5 font-mono" style={{ color: '#8B5CF6' }}>
-                        <MapPin size={13} /> {job.distance} km
-                      </span>
-                      <Button
-                        onClick={() => handleApply(job.id)}
-                        variant="primary"
-                        className="py-2 px-5 text-xs"
-                      >
-                        Apply Now
-                      </Button>
-                    </div>
-                  </div>
+                  <JobCard
+                    job={job}
+                    onApply={handleApply}
+                    isUrgent={idx === 0 && searchQuery === ''}
+                  />
                 </motion.div>
               ))}
             </div>

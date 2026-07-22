@@ -15,48 +15,7 @@ import JobCard from '@/components/JobCard';
 import TrustCard from '@/components/TrustCard';
 import EmptyState from '@/components/EmptyState';
 import { LiveStatusToggle, QuickLinkChip, StatusTag } from '@/components/ui/DashboardStyles';
-
-
-// Floating background orbs for dynamic aesthetic
-function FloatingOrbs() {
-  return (
-    <div className="fixed inset-0 pointer-events-none overflow-hidden z-0">
-      <div
-        className="absolute w-[500px] h-[500px] rounded-full animate-float"
-        style={{
-          top: '-10%', right: '-5%',
-          background: 'radial-gradient(circle, rgba(139,92,246,0.08) 0%, transparent 70%)',
-          filter: 'blur(40px)',
-        }}
-      />
-      <div
-        className="absolute w-[400px] h-[400px] rounded-full animate-float-delayed"
-        style={{
-          bottom: '10%', left: '-10%',
-          background: 'radial-gradient(circle, rgba(52,211,153,0.06) 0%, transparent 70%)',
-          filter: 'blur(50px)',
-        }}
-      />
-      <div
-        className="absolute w-[300px] h-[300px] rounded-full animate-glow-pulse"
-        style={{
-          top: '40%', right: '20%',
-          background: 'radial-gradient(circle, rgba(242,169,59,0.04) 0%, transparent 70%)',
-        }}
-      />
-    </div>
-  );
-}
-
-const staggerContainer = {
-  hidden: {},
-  show: { transition: { staggerChildren: 0.08 } },
-};
-
-const fadeUp = {
-  hidden: { opacity: 0, y: 20 },
-  show: { opacity: 1, y: 0, transition: { duration: 0.5, ease: [0.4, 0, 0.2, 1] as [number, number, number, number] } },
-};
+import { FloatingOrbs, staggerContainer, fadeUp } from '@/components/DesignSystem';
 
 export default function SeekerDashboard() {
   const { t } = useLanguage();

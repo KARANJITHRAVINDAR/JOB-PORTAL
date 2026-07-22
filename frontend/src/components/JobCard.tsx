@@ -11,6 +11,7 @@ interface Job {
   slots_required?: number;
   negotiable?: boolean | number;
   urgency?: 'HIGH' | 'NORMAL';
+  description?: string;
 }
 
 interface JobCardProps {
@@ -93,6 +94,12 @@ export default function JobCard({
             {slots} {slots > 1 ? 'slots open' : 'slot open'}
           </span>
         </div>
+
+        {job.description && (
+          <p className="text-sm text-text-muted flex-1 leading-relaxed font-sans mt-1">
+            {job.description}
+          </p>
+        )}
 
         {/* Footer */}
         <div className="flex justify-between items-center mt-auto pt-3" style={{ borderTop: '1px solid rgba(42,41,56,0.3)' }}>

@@ -53,14 +53,16 @@ export function PageHeader({ icon: Icon, title, subtitle, children }: {
   return (
     <header className="flex flex-col sm:flex-row sm:justify-between sm:items-start gap-4">
       <div>
-        <h1 className="text-2xl font-display font-extrabold flex items-center gap-2.5 text-text-primary">
-          <div className="w-8 h-8 rounded-lg flex items-center justify-center"
+        <h1 className="text-3xl md:text-4xl font-display font-extrabold tracking-tight text-text-primary leading-[1.1] flex items-center gap-3">
+          <div className="w-10 h-10 rounded-xl flex items-center justify-center shrink-0"
             style={{ background: 'linear-gradient(135deg, rgba(139,92,246,0.15), rgba(139,92,246,0.05))', border: '1px solid rgba(139,92,246,0.2)' }}>
-            <Icon size={16} className="text-violet" />
+            <Icon size={20} className="text-violet" />
           </div>
-          {title}
+          <span className="bg-clip-text text-transparent" style={{ backgroundImage: 'linear-gradient(135deg, #8B5CF6, #34D399)' }}>
+            {title}
+          </span>
         </h1>
-        {subtitle && <p className="text-sm text-text-muted mt-1.5">{subtitle}</p>}
+        {subtitle && <p className="text-sm text-text-muted mt-2 font-sans">{subtitle}</p>}
       </div>
       {children}
     </header>
