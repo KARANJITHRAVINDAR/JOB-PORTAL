@@ -1,5 +1,8 @@
 import express from 'express';
 import http from 'http';
+import dotenv from 'dotenv';
+
+dotenv.config();
 import { Server } from 'socket.io';
 import cors from 'cors';
 import pool from './db';

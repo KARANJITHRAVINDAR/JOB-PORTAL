@@ -2,7 +2,7 @@ import { Request, Response } from 'express';
 import { GoogleGenAI } from '@google/genai';
 
 // Initialize Gemini with the provided key
-const ai = new GoogleGenAI({ apiKey: 'AIzaSyDoEgcTUBOmNe0gOsj0y8PcKSTAsT9FMb' });
+const ai = new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY });
 
 export const extractJobDetails = async (req: Request, res: Response) => {
   try {

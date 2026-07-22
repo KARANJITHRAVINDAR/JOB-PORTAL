@@ -117,7 +117,7 @@ The system uses the following primary tables in MySQL database `workforce_platfo
 
 ### Prerequisites
 1.  **Node.js**: Version 18 or above recommended.
-2.  **MySQL Server**: MySQL 8.0 running locally on standard port (user: `root`, password: `Ks@kbd23777`).
+2.  **MySQL Server**: MySQL 8.0 running locally on standard port (credentials configured via `.env`).
 
 ### 1. Database Initialization
 Navigate to the `backend/` directory and run the initialization commands:
